@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 import os
 
 # Set Tesseract path
-tesseract_path = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+tesseract_path = '/usr/bin/tesseract'
 
 # Verify Tesseract exists
 if not os.path.exists(tesseract_path):

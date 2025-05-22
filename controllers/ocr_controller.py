@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("KhmerIDOCR")
 
 # Path to Tesseract executable (Windows only)
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
 async def process_cambodian_id_ocr(file: UploadFile) -> CambodianIDCardOCRResult:
     try:
