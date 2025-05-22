@@ -81,54 +81,37 @@ def preprocess_image(image_path: str) -> Image.Image:
         # Remove small noise
         opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
         
-        # Find sure background area
-        sure_bg = cv2.dilate(opening, kernel, iterations=3)
-        
-        # Apply slight blur to smooth the image
-        smoothed = cv2.GaussianBlur(sure_bg, (3, 3), 0)
+        # The 'opening' image is now binarized and has small noise removed.
+        # Further dilation and blurring (previously done on 'sure_bg') are generally
+        # not ideal for OCR as they can thicken or blur text features.
+        # The direct output of 'opening' should be better for OCR.
         
         # Convert back to PIL Image
-        return Image.fromarray(smoothed)
+        return Image.fromarray(opening)
         
     except Exception as e:
         logger.error(f"Error in image preprocessing: {str(e)}")
         # Return original image if preprocessing fails
-        return Image.open(image_path).convert('L')
+        # Ensure fallback returns a PIL image, as the function signature suggests.
+        pil_img = Image.open(image_path)
+        if pil_img.mode != 'L':
+            pil_img = pil_img.convert('L')
+        return pil_img
 
 def extract_text_with_tesseract(
     image_path: str,
     lang: str = 'khm+eng',
-    config: str = ('--psm 6 --oem 3 -c preserve_interword_spaces=1 '  # PSM 6: Assume a single uniform block of text
-                  '--dpi 300 -c tessedit_pageseg_mode=6 '  # PSM 6
-                  '-c textord_min_linesize=2.5 '  # Better for small text
-                  '-c textord_old_baselines=0 '  # Disable old baseline algorithm
-                  '-c language_model_penalty_non_dict_word=0.5 '  # Be more lenient with non-dictionary words
-                  '-c language_model_penalty_non_freq_dict_word=0.3 '  # Be more lenient with infrequent words
-                  '-c load_system_dawg=0 '  # Don't load system dictionary (can help with Khmer)
-                  '-c load_freq_dawg=0 '  # Don't load frequent words dictionary
-                  '-c textord_min_xheight=8 '  # Minimum x-height (helps with small text)
-                  '-c textord_tsv_medium_size_limit=10000 '  # Handle larger blocks of text
-                  '-c textord_tabfind_show_blocks=0 '  # Disable debug output
-                  '-c textord_min_linesize=2.5 '  # Minimum character height
-                  '-c textord_oldbl_holed_low=1.5 '  # Better for Khmer script
-                  '-c textord_oldbl_holed_size_limit=1000 '  # Better for Khmer script
-                  '-c textord_oldbl_corr_mean_y=1 '  # Better for Khmer script
-                  '-c textord_oldbl_jog_lim=8 '  # Better for Khmer script
-                  '-c textord_oldbl_jog_lim=8 '  # Better for Khmer script
-                  '-c textord_noise_sizelimit=0.25 '  # Better for Khmer script
-                  '-c textord_noise_normratio=0.5 '  # Better for Khmer script
-                  '-c textord_noise_sizefraction=0.5 '  # Better for Khmer script
-                  '-c textord_noise_sp_ratio=0.5 '  # Better for Khmer script
-                  '-c textord_noise_sn_ratio=0.5 '  # Better for Khmer script
-                  '-c textord_noise_sn_ratio2=0.5 '  # Better for Khmer script
-                  '-c textord_noise_sn_ratio3=0.5 '  # Better for Khmer script
-                  '-c textord_noise_sn_ratio4=0.5 '  # Better for Khmer script
-                  '-c textord_noise_sn_ratio5=0.5 '  # Better for Khmer script
-                  '-c textord_noise_sn_ratio6=0.5 '  # Better for Khmer script
-                  '-c textord_noise_sn_ratio7=0.5 '  # Better for Khmer script
-                  '-c textord_noise_sn_ratio8=0.5 '  # Better for Khmer script
-                  '-c textord_noise_sn_ratio9=0.5 '  # Better for Khmer script
-                  '-c textord_noise_sn_ratio10=0.5')  # Better for Khmer script
+    config: str = (
+        '--oem 1 --psm 11 -c preserve_interword_spaces=1 '  # OEM 1 for LSTM, PSM 11 for sparse text
+        '--dpi 300 '
+        '-c load_system_dawg=0 '  # Don't load system dictionary (can help with Khmer names)
+        '-c load_freq_dawg=0 '    # Don't load frequent words dictionary
+        # Removed legacy textord_ parameters and dictionary penalties as dawgs are off.
+        # PSM 11: Sparse text. Find as much text as possible in no particular order. Good for ID cards.
+        # OEM 1: Use LSTM OCR engine only.
+        # preserve_interword_spaces=1: Crucial for Khmer.
+        # load_system_dawg=0 / load_freq_dawg=0: Useful for proper nouns in IDs.
+    )
 ) -> List[Tuple[str, float]]:
     """
     Extract text from image using Tesseract OCR with enhanced settings for ID cards.
@@ -171,7 +154,9 @@ def extract_text_with_tesseract(
 def extract_text_with_tesseract_simple(
     image_path: str,
     lang: str = 'khm+eng',
-    config: str = '--psm 6 --oem 3 -c preserve_interword_spaces=1 --dpi 300'
+    # Simplified config, recommend using the more detailed extract_text_with_tesseract for ID cards
+    # Defaulting to PSM 11 and OEM 1 for general purpose if this simple one is used.
+    config: str = '--oem 1 --psm 11 -c preserve_interword_spaces=1 --dpi 300'
 ) -> str:
     """
     Extract text from image using Tesseract OCR (simpler version).
