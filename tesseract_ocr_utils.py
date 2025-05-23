@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 import os
 
 # Set Tesseract path
-tesseract_path = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+tesseract_path = r'/usr/bin/tesseract'
 
 # Verify Tesseract exists
 if not os.path.exists(tesseract_path):
@@ -35,13 +35,50 @@ try:
 except Exception as e:
     print(f"Warning: Tesseract verification failed: {e}")
 
-def preprocess_image(image_path: str) -> Image.Image:
+def overlay_ocr_bounding_boxes(image_path: str, preprocessed_image: Image.Image, output_path: str = None, lang: str = 'khm+eng', config: str = '--oem 1 --psm 11 -c preserve_interword_spaces=1 --dpi 300') -> str:
     """
-    Enhanced preprocessing for Khmer text in ID card images.
-    
+    Overlay bounding boxes for detected text regions using Tesseract and save the result.
+    Args:
+        image_path: Path to the original image (for size reference)
+        preprocessed_image: Preprocessed PIL Image used for OCR
+        output_path: Where to save the overlay image (default: <image>_bbox.png)
+        lang: Language for Tesseract
+        config: Tesseract config string
+    Returns:
+        Path to the saved overlay image
+    """
+    import pytesseract
+    import cv2
+    import numpy as np
+    from PIL import ImageDraw
+
+    # Convert PIL image to OpenCV format
+    img_cv = np.array(preprocessed_image)
+    if len(img_cv.shape) == 2:
+        img_cv = cv2.cvtColor(img_cv, cv2.COLOR_GRAY2BGR)
+    # Get OCR data
+    data = pytesseract.image_to_data(preprocessed_image, lang=lang, config=config, output_type=pytesseract.Output.DICT)
+    n_boxes = len(data['level'])
+    for i in range(n_boxes):
+        (x, y, w, h) = (data['left'][i], data['top'][i], data['width'][i], data['height'][i])
+        conf = int(data['conf'][i]) if data['conf'][i].isdigit() else -1
+        if conf > 0:
+            cv2.rectangle(img_cv, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    if output_path is None:
+        output_path = image_path.rsplit('.', 1)[0] + '_bbox.png'
+    cv2.imwrite(output_path, img_cv)
+    logger.info(f"OCR bounding boxes overlay saved: {output_path}")
+    return output_path
+
+def preprocess_image(image_path: str, save_debug: bool = False, debug_path: str = None, overlay_boxes: bool = False) -> Image.Image:
+    """
+    Enhanced preprocessing for Khmer text in ID card images, including deskewing and denoising.
+    Optionally saves the preprocessed image for debugging and overlays bounding boxes.
     Args:
         image_path: Path to the image file
-        
+        save_debug: If True, saves the preprocessed image for inspection
+        debug_path: Path to save the debug image (if None, appends '_preprocessed.png' to input)
+        overlay_boxes: If True, also saves an image with OCR bounding boxes overlay
     Returns:
         Preprocessed PIL Image
     """
@@ -61,6 +98,28 @@ def preprocess_image(image_path: str) -> Image.Image:
         # Convert to grayscale
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
+        # --- Deskewing ---
+        def compute_skew_angle(gray_img):
+            # Use binary + invert for finding lines
+            blur = cv2.GaussianBlur(gray_img, (5,5), 0)
+            _, bw = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+            coords = np.column_stack(np.where(bw > 0))
+            if len(coords) < 10:
+                return 0.0
+            rect = cv2.minAreaRect(coords)
+            angle = rect[-1]
+            if angle < -45:
+                angle = -(90 + angle)
+            else:
+                angle = -angle
+            return angle
+        angle = compute_skew_angle(gray)
+        if abs(angle) > 0.5:  # Only deskew if angle is significant
+            (h, w) = gray.shape
+            center = (w // 2, h // 2)
+            M = cv2.getRotationMatrix2D(center, angle, 1.0)
+            gray = cv2.warpAffine(gray, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+        
         # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         enhanced = clahe.apply(gray)
@@ -72,27 +131,27 @@ def preprocess_image(image_path: str) -> Image.Image:
         thresh = cv2.adaptiveThreshold(
             denoised, 255,
             cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY, 11, 7  # Increased block size and C value for better Khmer text
+            cv2.THRESH_BINARY, 11, 7
         )
         
         # Apply morphological operations to clean up the image
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-        
-        # Remove small noise
         opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
         
-        # The 'opening' image is now binarized and has small noise removed.
-        # Further dilation and blurring (previously done on 'sure_bg') are generally
-        # not ideal for OCR as they can thicken or blur text features.
-        # The direct output of 'opening' should be better for OCR.
+        # Optionally save for debugging
+        if save_debug:
+            if debug_path is None:
+                debug_path = image_path.rsplit('.', 1)[0] + '_preprocessed.png'
+            cv2.imwrite(debug_path, opening)
+            logger.info(f"Preprocessed image saved for debugging: {debug_path}")
+            if overlay_boxes:
+                overlay_ocr_bounding_boxes(image_path, Image.fromarray(opening))
         
         # Convert back to PIL Image
         return Image.fromarray(opening)
         
     except Exception as e:
         logger.error(f"Error in image preprocessing: {str(e)}")
-        # Return original image if preprocessing fails
-        # Ensure fallback returns a PIL image, as the function signature suggests.
         pil_img = Image.open(image_path)
         if pil_img.mode != 'L':
             pil_img = pil_img.convert('L')

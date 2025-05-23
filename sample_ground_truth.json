@@ -1,0 +1,38 @@
+{
+  "sample_id_1.jpg": {
+    "id_number": "150560905",
+    "full_name": "CHEN SOPHEAKDEY",
+    "name_kh": "ចិន សុភ័ក្ដិ",
+    "name_en": "CHEN SOPHEAKDEY",
+    "date_of_birth": "05.10.1989",
+    "gender": "Male",
+    "nationality": "Cambodian",
+    "height": "172 cm",
+    "birth_place": "ភ្នំពេញ",
+    "address": "ផ្ទះលេខ 123, ផ្លូវ 271, សង្កាត់ទឹកល្អក់, ខណ្ឌទួលគោក, រាជធានីភ្នំពេញ"
+  },
+  "sample_id_2.jpg": {
+    "id_number": "343234587",
+    "full_name": "SREY POV",
+    "name_kh": "ស្រី ពៅ",
+    "name_en": "SREY POV",
+    "date_of_birth": "03.08.1999",
+    "gender": "Female",
+    "nationality": "Cambodian",
+    "height": "169 cm",
+    "birth_place": "កំពង់ចាម",
+    "address": "ផ្ទះលេខ 45, ផ្លូវ 118, សង្កាត់ផ្សារកណ្តាល, ខណ្ឌដូនពេញ, រាជធានីភ្នំពេញ"
+  },
+  "id_card.jpg": {
+    "id_number": "343234587",
+    "full_name": "SREY POV",
+    "name_kh": "ស្រ ពៅ",
+    "name_en": "SREY POV",
+    "date_of_birth": "03.08.1999",
+    "gender": "Female",
+    "nationality": "Cambodian",
+    "height": "169 cm",
+    "birth_place": "កំពង់ចាម",
+    "address": "ផ្ទះ33 ផ្លូវ355 ភូមិ1 សង្កាត់បឹងតក់ទី1 ខណ្ឌទួលគោរ ភ្នំពេញ រ ក ស 7"
+  }
+}
