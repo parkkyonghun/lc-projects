@@ -194,7 +194,7 @@ rt_system = RealTimeModelImprovement()
 
 # Collect user corrections
 rt_system.collect_user_feedback(
-    image_path="user_image.jpg",
+    image_path="id_image.jpg",
     ocr_result=original_result,
     user_corrections=corrected_fields,
     confidence=0.9

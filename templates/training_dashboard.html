@@ -465,13 +465,150 @@
             border-radius: 8px;
             margin-bottom: 15px;
         }
+
+        /* Model Comparison Styles */
+        .model-comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .model-card {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .model-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .model-card.best-model {
+            border-color: #48bb78;
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+        }
+
+        .model-card.best-model::before {
+            content: "🏆 Best Model";
+            position: absolute;
+            top: -10px;
+            right: 15px;
+            background: #48bb78;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .model-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .model-name {
+            font-weight: bold;
+            color: #2d3748;
+            font-size: 1.1rem;
+        }
+
+        .model-accuracy {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .model-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .metric-item {
+            text-align: center;
+            padding: 8px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: #718096;
+            margin-bottom: 2px;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .model-description {
+            color: #4a5568;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .model-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .btn-deploy {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-deploy:hover {
+            background: #38a169;
+            transform: translateY(-1px);
+        }
+
+        .btn-details {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-details:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 AI Training Dashboard</h1>
-            <p>Monitor and manage your AI model training sessions</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>🤖 AI Training Dashboard</h1>
+                    <p>Monitor and manage your AI model training sessions</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn" onclick="startRealTimeMonitoring()">📡 Start Real-time Monitoring</button>
+                    <button class="btn" onclick="stopRealTimeMonitoring()">⏹️ Stop Monitoring</button>
+                </div>
+            </div>
         </div>
 
         <div class="stats-grid" id="statsGrid">
@@ -526,6 +663,17 @@
             </div>
         </div>
 
+        <!-- Model Comparison Section -->
+        <div class="sessions-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>🔍 Model Performance Comparison</h2>
+                <button class="btn" onclick="refreshModelComparison()">🔄 Refresh</button>
+            </div>
+            <div id="modelComparisonContainer">
+                <div class="loading">Loading model comparison...</div>
+            </div>
+        </div>
+
         <div class="sessions-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2>Recent Training Sessions</h2>
@@ -564,25 +712,33 @@
 
                     <!-- Upload Method -->
                     <div id="uploadMethod" class="collection-method" style="display: none;">
-                        <h3>Upload ID Card Images</h3>
+                        <h3>📁 Upload ID Card Images with Auto-OCR</h3>
                         <div class="upload-area" id="uploadArea">
                             <div class="upload-icon">📁</div>
                             <p>Drag & drop images here or click to browse</p>
                             <input type="file" id="imageUpload" multiple accept="image/*" style="display: none;">
                             <button class="btn" onclick="document.getElementById('imageUpload').click()">Choose Files</button>
+                            <button class="btn" onclick="processUploadedImagesWithOCR()" style="margin-left: 10px;">🤖 Auto-Fill with OCR</button>
                         </div>
                         <div id="uploadedImages" class="uploaded-images"></div>
+                        <div id="uploadOcrProcessing" style="display: none; text-align: center; margin-top: 15px;">
+                            <div class="loading">🤖 Processing uploaded images with OCR... Please wait</div>
+                        </div>
                     </div>
 
                     <!-- Camera Method -->
                     <div id="cameraMethod" class="collection-method" style="display: none;">
-                        <h3>Camera Capture</h3>
+                        <h3>📷 Camera Capture with Auto-OCR</h3>
                         <div class="camera-container">
                             <video id="cameraVideo" autoplay style="width: 100%; max-width: 500px; border-radius: 8px;"></video>
                             <div class="camera-controls">
-                                <button class="btn" onclick="startCamera()">Start Camera</button>
-                                <button class="btn" onclick="captureImage()">Capture Image</button>
-                                <button class="btn" onclick="stopCamera()">Stop Camera</button>
+                                <button class="btn" onclick="startCamera()">📷 Start Camera</button>
+                                <button class="btn" onclick="captureImage()">📸 Capture Only</button>
+                                <button class="btn" onclick="captureImageWithOCR()">🤖 Capture & Auto-Fill</button>
+                                <button class="btn" onclick="stopCamera()">⏹️ Stop Camera</button>
+                            </div>
+                            <div id="ocrProcessing" style="display: none; text-align: center; margin-top: 15px;">
+                                <div class="loading">🤖 Processing with OCR... Please wait</div>
                             </div>
                         </div>
                         <div id="capturedImages" class="captured-images"></div>
@@ -637,6 +793,9 @@
                 document.getElementById('activeSessions').textContent = stats.active_sessions;
                 document.getElementById('avgAccuracy').textContent = (stats.average_accuracy * 100).toFixed(1) + '%';
                 document.getElementById('totalSamples').textContent = stats.total_training_samples;
+
+                // Load model comparison
+                await loadModelComparison();
 
                 // Load recent sessions
                 const sessionsResponse = await fetch('/ui/api/sessions/recent');
@@ -979,6 +1138,56 @@
             showGroundTruthSection();
         }
 
+        async function captureImageWithOCR() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+
+            const dataUrl = canvas.toDataURL('image/jpeg');
+
+            // Show processing indicator
+            document.getElementById('ocrProcessing').style.display = 'block';
+
+            try {
+                // Convert dataURL to blob for upload
+                const blob = await dataURLToBlob(dataUrl);
+
+                // Process with OCR
+                const ocrResult = await processImageWithOCR(blob, `captured_${Date.now()}.jpg`);
+
+                const capturedImagesDiv = document.getElementById('capturedImages');
+                const imageIndex = collectedImages.length;
+
+                collectedImages.push({
+                    dataUrl: dataUrl,
+                    index: imageIndex,
+                    filename: `captured_${Date.now()}.jpg`,
+                    ocrResult: ocrResult // Store OCR result
+                });
+
+                const imageDiv = document.createElement('div');
+                imageDiv.innerHTML = `
+                    <img src="${dataUrl}" class="image-preview" alt="Captured image ${imageIndex + 1}">
+                    <p><strong>Captured Image ${imageIndex + 1}</strong> - 🤖 Auto-filled with OCR</p>
+                `;
+                capturedImagesDiv.appendChild(imageDiv);
+
+                // Show ground truth section with pre-filled data
+                showGroundTruthSectionWithOCR();
+
+            } catch (error) {
+                alert('❌ OCR processing failed: ' + error.message);
+                // Fall back to regular capture
+                captureImage();
+            } finally {
+                document.getElementById('ocrProcessing').style.display = 'none';
+            }
+        }
+
         function stopCamera() {
             if (cameraStream) {
                 cameraStream.getTracks().forEach(track => track.stop());
@@ -1011,6 +1220,59 @@
             } catch (error) {
                 alert('❌ Failed to use sample data: ' + error.message);
             }
+        }
+
+        // OCR Processing Functions
+        async function processUploadedImagesWithOCR() {
+            if (collectedImages.length === 0) {
+                alert('⚠️ Please upload images first!');
+                return;
+            }
+
+            document.getElementById('uploadOcrProcessing').style.display = 'block';
+
+            try {
+                // Process each uploaded image with OCR
+                for (let i = 0; i < collectedImages.length; i++) {
+                    const image = collectedImages[i];
+                    if (image.file) {
+                        const ocrResult = await processImageWithOCR(image.file, image.file.name);
+                        collectedImages[i].ocrResult = ocrResult;
+                    }
+                }
+
+                // Show ground truth section with pre-filled data
+                showGroundTruthSectionWithOCR();
+                alert('✅ OCR processing complete! Please review and correct the auto-filled data.');
+
+            } catch (error) {
+                alert('❌ OCR processing failed: ' + error.message);
+                showGroundTruthSection(); // Fall back to empty forms
+            } finally {
+                document.getElementById('uploadOcrProcessing').style.display = 'none';
+            }
+        }
+
+        async function processImageWithOCR(imageFile, filename) {
+            const formData = new FormData();
+            formData.append('file', imageFile);
+
+            const response = await fetch('/ocr/idcard', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`OCR request failed: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            return result;
+        }
+
+        async function dataURLToBlob(dataURL) {
+            const response = await fetch(dataURL);
+            return response.blob();
         }
 
         // Ground Truth Functions
@@ -1056,6 +1318,75 @@
                     <div class="form-group">
                         <label for="address_${index}">Address:</label>
                         <input type="text" id="address_${index}" placeholder="Enter address">
+                    </div>
+                `;
+                groundTruthForms.appendChild(formDiv);
+            });
+        }
+
+        function showGroundTruthSectionWithOCR() {
+            const groundTruthSection = document.getElementById('groundTruthSection');
+            const groundTruthForms = document.getElementById('groundTruthForms');
+
+            groundTruthSection.style.display = 'block';
+            groundTruthForms.innerHTML = '';
+
+            collectedImages.forEach((image, index) => {
+                const ocrData = image.ocrResult || {};
+                const extractedData = ocrData.extracted_data || {};
+
+                const formDiv = document.createElement('div');
+                formDiv.className = 'ground-truth-form';
+                formDiv.innerHTML = `
+                    <h4>📝 Ground Truth for Image ${index + 1} ${image.ocrResult ? '🤖 (Auto-filled)' : ''}</h4>
+                    <img src="${image.dataUrl}" class="image-preview" alt="Image ${index + 1}">
+
+                    ${image.ocrResult ? `
+                        <div style="background: #e8f5e8; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                            <strong>🤖 OCR Confidence:</strong> ${(ocrData.confidence || 0.8) * 100}% - Please review and correct any errors
+                        </div>
+                    ` : ''}
+
+                    <div class="form-group">
+                        <label for="khmer_name_${index}">Khmer Name (ឈ្មោះ):</label>
+                        <input type="text" id="khmer_name_${index}" placeholder="Enter Khmer name"
+                               value="${extractedData.name_kh || ''}"
+                               style="${image.ocrResult ? 'background-color: #f0f8ff;' : ''}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="latin_name_${index}">Latin Name:</label>
+                        <input type="text" id="latin_name_${index}" placeholder="Enter Latin name"
+                               value="${extractedData.name_en || ''}"
+                               style="${image.ocrResult ? 'background-color: #f0f8ff;' : ''}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_number_${index}">ID Number:</label>
+                        <input type="text" id="id_number_${index}" placeholder="Enter ID number"
+                               value="${extractedData.id_number || ''}"
+                               style="${image.ocrResult ? 'background-color: #f0f8ff;' : ''}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="date_of_birth_${index}">Date of Birth:</label>
+                        <input type="text" id="date_of_birth_${index}" placeholder="DD/MM/YYYY"
+                               value="${extractedData.date_of_birth || ''}"
+                               style="${image.ocrResult ? 'background-color: #f0f8ff;' : ''}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="place_of_birth_${index}">Place of Birth:</label>
+                        <input type="text" id="place_of_birth_${index}" placeholder="Enter place of birth"
+                               value="${extractedData.place_of_birth || ''}"
+                               style="${image.ocrResult ? 'background-color: #f0f8ff;' : ''}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address_${index}">Address:</label>
+                        <input type="text" id="address_${index}" placeholder="Enter address"
+                               value="${extractedData.address || ''}"
+                               style="${image.ocrResult ? 'background-color: #f0f8ff;' : ''}">
                     </div>
                 `;
                 groundTruthForms.appendChild(formDiv);
@@ -1156,6 +1487,206 @@
             } catch (error) {
                 alert('Failed to create session: ' + error.message);
             }
+        }
+
+        // Model Comparison Functions
+        async function loadModelComparison() {
+            try {
+                const response = await fetch('/ui/api/models/comparison');
+                const data = await response.json();
+
+                displayModelComparison(data.models);
+            } catch (error) {
+                console.error('Failed to load model comparison:', error);
+                document.getElementById('modelComparisonContainer').innerHTML =
+                    '<div class="error">Failed to load model comparison data</div>';
+            }
+        }
+
+        function displayModelComparison(models) {
+            const container = document.getElementById('modelComparisonContainer');
+
+            if (!models || models.length === 0) {
+                container.innerHTML = '<div class="loading">No models available for comparison</div>';
+                return;
+            }
+
+            // Find the best model (highest accuracy)
+            const bestModel = models.reduce((best, current) =>
+                current.accuracy > best.accuracy ? current : best
+            );
+
+            const modelsHtml = models.map(model => {
+                const isBest = model.model_id === bestModel.model_id;
+                return `
+                    <div class="model-card ${isBest ? 'best-model' : ''}">
+                        <div class="model-header">
+                            <div class="model-name">${model.name}</div>
+                            <div class="model-accuracy">${(model.accuracy * 100).toFixed(1)}%</div>
+                        </div>
+
+                        <div class="model-metrics">
+                            <div class="metric-item">
+                                <div class="metric-label">Speed</div>
+                                <div class="metric-value">${model.speed}</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-label">Memory</div>
+                                <div class="metric-value">${model.memory_usage}</div>
+                            </div>
+                        </div>
+
+                        <div class="model-description">
+                            <strong>Best for:</strong> ${model.best_for}
+                        </div>
+
+                        <div class="model-actions">
+                            <button class="btn-small btn-deploy" onclick="deployModel('${model.model_id}')">
+                                🚀 Deploy
+                            </button>
+                            <button class="btn-small btn-details" onclick="showModelDetails('${model.model_id}')">
+                                📊 Details
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `<div class="model-comparison-grid">${modelsHtml}</div>`;
+        }
+
+        async function refreshModelComparison() {
+            document.getElementById('modelComparisonContainer').innerHTML =
+                '<div class="loading">Refreshing model comparison...</div>';
+            await loadModelComparison();
+        }
+
+        async function deployModel(modelId) {
+            if (!confirm(`Are you sure you want to deploy model: ${modelId}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/training/model/deploy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model_id: modelId })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`✅ Model ${modelId} deployed successfully!`);
+                    await loadModelComparison(); // Refresh the comparison
+                } else {
+                    alert(`❌ Failed to deploy model: ${result.message}`);
+                }
+            } catch (error) {
+                alert(`❌ Failed to deploy model: ${error.message}`);
+            }
+        }
+
+        function showModelDetails(modelId) {
+            // For now, show a simple alert with model details
+            // In a real implementation, this would open a detailed modal
+            alert(`📊 Model Details for: ${modelId}\n\nThis would show detailed metrics, training history, and performance analytics.`);
+        }
+
+        // Real-time Progress Monitoring with WebSocket
+        let websocket = null;
+        let currentSessionId = null;
+
+        function setupWebSocket(sessionId) {
+            if (websocket) {
+                websocket.close();
+            }
+
+            currentSessionId = sessionId;
+            const wsUrl = `ws://localhost:8000/ui/ws/training/${sessionId}`;
+            websocket = new WebSocket(wsUrl);
+
+            websocket.onopen = function(event) {
+                console.log('WebSocket connected for session:', sessionId);
+                showRealTimeProgress(true);
+            };
+
+            websocket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                updateRealTimeProgress(data);
+            };
+
+            websocket.onclose = function(event) {
+                console.log('WebSocket disconnected');
+                showRealTimeProgress(false);
+            };
+
+            websocket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                showRealTimeProgress(false);
+            };
+        }
+
+        function showRealTimeProgress(show) {
+            const progressContainer = document.getElementById('realTimeProgress');
+            if (!progressContainer) {
+                // Create real-time progress container if it doesn't exist
+                const container = document.createElement('div');
+                container.id = 'realTimeProgress';
+                container.className = 'sessions-section';
+                container.style.display = show ? 'block' : 'none';
+                container.innerHTML = `
+                    <h2>📡 Real-time Training Progress</h2>
+                    <div id="progressContent">
+                        <div class="loading">Connecting to training session...</div>
+                    </div>
+                `;
+
+                // Insert before the model comparison section
+                const modelSection = document.querySelector('.sessions-section');
+                modelSection.parentNode.insertBefore(container, modelSection);
+            } else {
+                progressContainer.style.display = show ? 'block' : 'none';
+            }
+        }
+
+        function updateRealTimeProgress(data) {
+            const progressContent = document.getElementById('progressContent');
+            if (!progressContent) return;
+
+            const progressData = data.data;
+            const accuracy = (progressData.current_accuracy * 100).toFixed(1);
+
+            progressContent.innerHTML = `
+                <div class="session-card">
+                    <div class="session-header">
+                        <div class="session-name">Session: ${data.session_id}</div>
+                        <div class="session-status status-active">${progressData.status}</div>
+                    </div>
+                    <div style="margin: 15px 0;">
+                        <strong>Current Accuracy:</strong> ${accuracy}% |
+                        <strong>Samples Processed:</strong> ${progressData.samples_processed} |
+                        <strong>ETA:</strong> ${progressData.estimated_completion}
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${accuracy}%"></div>
+                    </div>
+                    <small>Last Update: ${new Date(data.timestamp).toLocaleTimeString()}</small>
+                </div>
+            `;
+        }
+
+        function startRealTimeMonitoring() {
+            // Start monitoring for a demo session
+            const demoSessionId = 'demo-training-' + Date.now();
+            setupWebSocket(demoSessionId);
+        }
+
+        function stopRealTimeMonitoring() {
+            if (websocket) {
+                websocket.close();
+                websocket = null;
+            }
+            showRealTimeProgress(false);
         }
 
         // Auto-refresh every 30 seconds

@@ -20,12 +20,46 @@ from ai_enhancement_config import get_config_by_name as get_ai_config, auto_sele
 from extreme_enhancement import enhance_with_multiple_approaches, get_best_enhanced_image
 from robust_ocr_parser import parse_ocr_robust
 
+# Import Khmer language processing
+from khmer_text_processor import create_khmer_processor
+from khmer_language_integration import create_khmer_integration
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("KhmerIDOCR")
 
 # Path to Tesseract executable (Windows only)
 pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+
+async def get_active_model_info() -> Optional[Dict]:
+    """
+    Get information about the currently active deployed model.
+
+    Returns:
+        Dictionary with active model info or None if no active model
+    """
+    try:
+        import json
+        import os
+
+        active_model_path = 'model_registry/active_model.json'
+        if os.path.exists(active_model_path):
+            with open(active_model_path, 'r') as f:
+                active_model_info = json.load(f)
+
+            # Add mock accuracy for demonstration (in production, this would come from model metadata)
+            if 'accuracy' not in active_model_info:
+                active_model_info['accuracy'] = 0.95  # Assume high accuracy for deployed models
+
+            logger.info(f"Found active model: {active_model_info['model_id']}")
+            return active_model_info
+        else:
+            logger.info("No active deployed model found, using default OCR settings")
+            return None
+
+    except Exception as e:
+        logger.error(f"Failed to get active model info: {e}")
+        return None
 
 async def process_cambodian_id_ocr(
     file: UploadFile,
@@ -50,6 +84,18 @@ async def process_cambodian_id_ocr(
         CambodianIDCardOCRResult with extracted data
     """
     try:
+        # Check for active deployed model and use enhanced settings if available
+        active_model_info = await get_active_model_info()
+        if active_model_info:
+            logger.info(f"Using active deployed model: {active_model_info['model_id']}")
+            # Enhance processing parameters based on deployed model capabilities
+            use_enhanced_preprocessing = True
+            use_robust_parsing = True
+            # If the deployed model has high accuracy, we can use more aggressive enhancement
+            if active_model_info.get('accuracy', 0) > 0.9:
+                use_ai_enhancement = True
+                enhancement_mode = "khmer_optimized"
+
         # Validate file type
         if not file.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Invalid file type. Only images are allowed.")
@@ -97,6 +143,32 @@ async def process_cambodian_id_ocr(
         english_text = pytesseract.image_to_string(processed_image, lang='eng', config=tesseract_config)
 
         logger.info(f"OCR completed - Khmer: {len(khmer_text)} chars, English: {len(english_text)} chars")
+
+        # Apply Khmer text processing and normalization
+        khmer_processor = create_khmer_processor()
+
+        # Process Khmer text
+        if khmer_text.strip():
+            # Normalize Khmer text
+            normalized_khmer = khmer_processor.normalize_khmer_text(khmer_text)
+
+            # Validate and correct OCR errors
+            validation_result = khmer_processor.validate_khmer_text(normalized_khmer)
+            correction_result = khmer_processor.correct_ocr_errors(normalized_khmer)
+
+            # Use corrected text if confidence is high enough
+            if correction_result['confidence'] > 0.7:
+                khmer_text = correction_result['corrected_text']
+                logger.info(f"Applied Khmer text corrections with confidence: {correction_result['confidence']:.3f}")
+            else:
+                khmer_text = normalized_khmer
+                logger.info("Applied Khmer text normalization only")
+
+            # Log validation results
+            if validation_result['issues']:
+                logger.warning(f"Khmer text validation issues: {validation_result['issues']}")
+
+        logger.info(f"Khmer text processing completed - Final length: {len(khmer_text)} chars")
 
         # Parse Khmer and English text using appropriate parser
         if use_robust_parsing:

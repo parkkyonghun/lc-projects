@@ -1,0 +1,108 @@
+{
+  "comparison_timestamp": "2025-05-27T18:01:07.777859",
+  "test_setup": {
+    "test_images": 6,
+    "image_source": "training_data/raw_images",
+    "test_fields": [
+      "name",
+      "id_number",
+      "date_of_birth",
+      "gender",
+      "nationality"
+    ]
+  },
+  "default_model_results": {
+    "model_info": {
+      "model_id": "default_tesseract",
+      "has_active_model": false,
+      "accuracy": "baseline",
+      "status": "default"
+    },
+    "performance": {
+      "total_images": 6,
+      "successful_extractions": 3,
+      "success_rate": 0.5,
+      "average_processing_time": 2.8,
+      "field_extraction_rates": {
+        "name": 0.33,
+        "id_number": 0.17,
+        "date_of_birth": 0.67,
+        "gender": 0.5,
+        "nationality": 0.83
+      }
+    }
+  },
+  "deployed_model_results": {
+    "model_info": {
+      "model_id": "khmer_ocr_v1_20250527",
+      "has_active_model": true,
+      "accuracy": 0.6665911437113099,
+      "status": "active",
+      "deployment_notes": "Deployed trained model with 66.7% accuracy (5.4% improvement over baseline)"
+    },
+    "performance": {
+      "total_images": 6,
+      "successful_extractions": 4,
+      "success_rate": 0.67,
+      "average_processing_time": 2.5,
+      "field_extraction_rates": {
+        "name": 0.5,
+        "id_number": 0.33,
+        "date_of_birth": 0.83,
+        "gender": 0.67,
+        "nationality": 0.83
+      }
+    }
+  },
+  "performance_comparison": {
+    "overall_improvement": {
+      "default_success_rate": 0.5,
+      "deployed_success_rate": 0.67,
+      "improvement": 0.17000000000000004,
+      "improvement_percentage": 34.00000000000001
+    },
+    "field_improvements": {
+      "name": {
+        "default_rate": 0.33,
+        "deployed_rate": 0.5,
+        "improvement": 0.16999999999999998,
+        "improvement_percentage": 51.5151515151515
+      },
+      "id_number": {
+        "default_rate": 0.17,
+        "deployed_rate": 0.33,
+        "improvement": 0.16,
+        "improvement_percentage": 94.11764705882352
+      },
+      "date_of_birth": {
+        "default_rate": 0.67,
+        "deployed_rate": 0.83,
+        "improvement": 0.15999999999999992,
+        "improvement_percentage": 23.88059701492536
+      },
+      "gender": {
+        "default_rate": 0.5,
+        "deployed_rate": 0.67,
+        "improvement": 0.17000000000000004,
+        "improvement_percentage": 34.00000000000001
+      },
+      "nationality": {
+        "default_rate": 0.83,
+        "deployed_rate": 0.83,
+        "improvement": 0.0,
+        "improvement_percentage": 0.0
+      }
+    },
+    "performance_metrics": {
+      "default_processing_time": 2.8,
+      "deployed_processing_time": 2.5,
+      "speed_improvement": 0.2999999999999998
+    },
+    "summary": {
+      "overall_better": true,
+      "faster": true,
+      "significant_improvement": true,
+      "recommendation": "🚀 Excellent! Deployed model shows significant improvement. Recommended for production."
+    }
+  }
+}

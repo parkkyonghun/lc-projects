@@ -1,0 +1,8 @@
+{
+  "model_id": "khmer_ocr_v1_20250527",
+  "activated_at": "2025-01-27T10:30:00.000000",
+  "status": "active",
+  "accuracy": 0.6665911437113099,
+  "model_path": "training_data/deployed_models/khmer_ocr_v1.json",
+  "deployment_notes": "Deployed trained model with 66.7% accuracy (5.4% improvement over baseline)"
+}
