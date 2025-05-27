@@ -1,0 +1,55 @@
+{
+  "training_date": "2025-05-27T15:30:03.178353",
+  "initial_accuracy": 0.4732037526701641,
+  "final_accuracy": 0.5527597007891727,
+  "accuracy_improvement": 0.07955594811900857,
+  "total_iterations": 5,
+  "best_iteration": 3,
+  "training_results": [
+    {
+      "iteration": 1,
+      "accuracy": 0.5395274738339267,
+      "improvement": 0.06632372116376262,
+      "metrics": "TrainingMetrics(accuracy=np.float64(0.5395274738339267), precision=np.float64(0.5125511001422304), recall=np.float64(0.49636527592721263), f1_score=np.float64(0.5017605506655519), confidence_score=np.float64(0.47478417697385555), processing_time=2.0, quality_improvement=0.06632372116376262)",
+      "focus_areas": [
+        "general_improvement"
+      ]
+    },
+    {
+      "iteration": 2,
+      "accuracy": 0.5307798513228337,
+      "improvement": 0.05757609865266951,
+      "metrics": "TrainingMetrics(accuracy=np.float64(0.5307798513228337), precision=np.float64(0.504240858756692), recall=np.float64(0.488317463217007), f1_score=np.float64(0.49362526173023535), confidence_score=np.float64(0.4670862691640936), processing_time=2.0, quality_improvement=0.05757609865266951)",
+      "focus_areas": [
+        "general_improvement"
+      ]
+    },
+    {
+      "iteration": 3,
+      "accuracy": 0.5527597007891727,
+      "improvement": 0.07955594811900855,
+      "metrics": "TrainingMetrics(accuracy=np.float64(0.5527597007891727), precision=np.float64(0.525121715749714), recall=np.float64(0.5085389247260389), f1_score=np.float64(0.5140665217339306), confidence_score=np.float64(0.48642853669447195), processing_time=2.0, quality_improvement=0.07955594811900855)",
+      "focus_areas": [
+        "general_improvement"
+      ]
+    },
+    {
+      "iteration": 4,
+      "accuracy": 0.5456091330410616,
+      "improvement": 0.07240538037089747,
+      "metrics": "TrainingMetrics(accuracy=np.float64(0.5456091330410616), precision=np.float64(0.5183286763890085), recall=np.float64(0.5019604023977767), f1_score=np.float64(0.5074164937281873), confidence_score=np.float64(0.4801360370761342), processing_time=2.0, quality_improvement=0.07240538037089747)",
+      "focus_areas": [
+        "general_improvement"
+      ]
+    },
+    {
+      "iteration": 5,
+      "accuracy": 0.5091213353285946,
+      "improvement": 0.035917582658430494,
+      "metrics": "TrainingMetrics(accuracy=np.float64(0.5091213353285946), precision=np.float64(0.48366526856216485), recall=np.float64(0.46839162850230703), f1_score=np.float64(0.47348284185559303), confidence_score=np.float64(0.4480267750891633), processing_time=2.0, quality_improvement=0.035917582658430494)",
+      "focus_areas": [
+        "general_improvement"
+      ]
+    }
+  ]
+}

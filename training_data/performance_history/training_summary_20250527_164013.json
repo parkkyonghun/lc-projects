@@ -1,0 +1,65 @@
+{
+  "training_date": "2025-05-27T16:40:13.470587",
+  "initial_accuracy": 0.47995640092894015,
+  "final_accuracy": 0.5209838649191766,
+  "accuracy_improvement": 0.041027463990236435,
+  "total_iterations": 5,
+  "best_iteration": 5,
+  "training_results": [
+    {
+      "iteration": 1,
+      "accuracy": 0.507968647491972,
+      "improvement": 0.028012246563031896,
+      "metrics": "TrainingMetrics(accuracy=np.float64(0.507968647491972), precision=np.float64(0.4825702151173734), recall=np.float64(0.4673311556926143), f1_score=np.float64(0.472410842167534), confidence_score=np.float64(0.4470124097929354), processing_time=2.0, quality_improvement=0.028012246563031896)",
+      "focus_areas": [
+        "general_improvement",
+        "extreme_enhancement",
+        "extreme_enhancement"
+      ]
+    },
+    {
+      "iteration": 2,
+      "accuracy": 0.5116689931537958,
+      "improvement": 0.03171259222485561,
+      "metrics": "TrainingMetrics(accuracy=np.float64(0.5116689931537958), precision=np.float64(0.48608554349610594), recall=np.float64(0.4707354737014921), f1_score=np.float64(0.47585216363303007), confidence_score=np.float64(0.4502687139753403), processing_time=2.0, quality_improvement=0.03171259222485561)",
+      "focus_areas": [
+        "general_improvement",
+        "extreme_enhancement",
+        "extreme_enhancement"
+      ]
+    },
+    {
+      "iteration": 3,
+      "accuracy": 0.5091527692567669,
+      "improvement": 0.02919636832782676,
+      "metrics": "TrainingMetrics(accuracy=np.float64(0.5091527692567669), precision=np.float64(0.4836951307939285), recall=np.float64(0.46842054771622554), f1_score=np.float64(0.47351207540879325), confidence_score=np.float64(0.44805443694595487), processing_time=2.0, quality_improvement=0.02919636832782676)",
+      "focus_areas": [
+        "general_improvement",
+        "extreme_enhancement",
+        "extreme_enhancement"
+      ]
+    },
+    {
+      "iteration": 4,
+      "accuracy": 0.5178649204075356,
+      "improvement": 0.03790851947859544,
+      "metrics": "TrainingMetrics(accuracy=np.float64(0.5178649204075356), precision=np.float64(0.49197167438715883), recall=np.float64(0.4764357267749328), f1_score=np.float64(0.48161437597900814), confidence_score=np.float64(0.45572112995863134), processing_time=2.0, quality_improvement=0.03790851947859544)",
+      "focus_areas": [
+        "general_improvement",
+        "extreme_enhancement",
+        "extreme_enhancement"
+      ]
+    },
+    {
+      "iteration": 5,
+      "accuracy": 0.5209838649191766,
+      "improvement": 0.041027463990236476,
+      "metrics": "TrainingMetrics(accuracy=np.float64(0.5209838649191766), precision=np.float64(0.49493467167321775), recall=np.float64(0.4793051557256425), f1_score=np.float64(0.48451499437483425), confidence_score=np.float64(0.4584658011288754), processing_time=2.0, quality_improvement=0.041027463990236476)",
+      "focus_areas": [
+        "general_improvement",
+        "extreme_enhancement",
+        "extreme_enhancement"
+      ]
+    }
+  ]
+}

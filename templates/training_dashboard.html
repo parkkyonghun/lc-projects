@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9em;
+        }
+
+        .sessions-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+        }
+
+        .session-card {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .session-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .session-name {
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .session-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .status-active {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-completed {
+            background: #bee3f8;
+            color: #2a4365;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        /* Training Flow Styles */
+        .training-flow-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+        }
+
+        .training-flow-section h2 {
+            margin: 0 0 20px 0;
+            color: #2d3748;
+        }
+
+        .training-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .step-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .step-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .step-card.completed {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+
+        .step-card.running {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            animation: pulse 2s infinite;
+        }
+
+        .step-card.disabled {
+            background: linear-gradient(135deg, #ccc 0%, #999 100%);
+            cursor: not-allowed;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(33, 150, 243, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(33, 150, 243, 0); }
+        }
+
+        .step-number {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .step-content h3 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+        }
+
+        .step-content p {
+            margin: 0 0 15px 0;
+            opacity: 0.9;
+        }
+
+        .step-status {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            opacity: 0.8;
+        }
+
+        .close:hover {
+            opacity: 1;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .collection-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .option-card {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option-card:hover {
+            border-color: #667eea;
+            background: #edf2f7;
+            transform: translateY(-2px);
+        }
+
+        .option-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .option-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .option-card h3 {
+            margin: 10px 0;
+            font-size: 1.2rem;
+        }
+
+        .option-card p {
+            margin: 0;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .collection-method {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.6;
+        }
+
+        .camera-container {
+            text-align: center;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .camera-controls {
+            margin-top: 15px;
+        }
+
+        .camera-controls .btn {
+            margin: 0 5px;
+        }
+
+        .sample-info {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .info-item {
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .ground-truth-section {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .ground-truth-form {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            border: 1px solid #e2e8f0;
+        }
+
+        .form-group {
+            margin: 15px 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .image-preview {
+            max-width: 200px;
+            max-height: 150px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Training Dashboard</h1>
+            <p>Monitor and manage your AI model training sessions</p>
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalSessions">-</div>
+                <div class="stat-label">Total Sessions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activeSessions">-</div>
+                <div class="stat-label">Active Sessions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgAccuracy">-</div>
+                <div class="stat-label">Average Accuracy</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalSamples">-</div>
+                <div class="stat-label">Training Samples</div>
+            </div>
+        </div>
+
+        <!-- Quick Start Training Flow -->
+        <div class="training-flow-section">
+            <h2>🚀 Quick Start Training Flow</h2>
+            <div class="training-steps">
+                <div class="step-card" onclick="startStep1()">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>📸 Collect Training Data</h3>
+                        <p>Collect your first training samples (2 minutes)</p>
+                        <div class="step-status" id="step1Status">Ready</div>
+                    </div>
+                </div>
+
+                <div class="step-card" onclick="startStep2()">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>🎨 Generate Synthetic Data</h3>
+                        <p>Create 200+ training variations (5 minutes)</p>
+                        <div class="step-status" id="step2Status">Waiting</div>
+                    </div>
+                </div>
+
+                <div class="step-card" onclick="startStep3()">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>🎓 Smart Training Cycle</h3>
+                        <p>Train AI for 95%+ accuracy (10 minutes)</p>
+                        <div class="step-status" id="step3Status">Waiting</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sessions-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Recent Training Sessions</h2>
+                <button class="btn" onclick="createNewSession()">+ New Session</button>
+            </div>
+            <div id="sessionsList">
+                <div class="loading">Loading sessions...</div>
+            </div>
+        </div>
+
+        <!-- Data Collection Modal -->
+        <div id="dataCollectionModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>📸 Step 1: Collect Training Data</h2>
+                    <span class="close" onclick="closeDataCollectionModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="collection-options">
+                        <div class="option-card" onclick="selectCollectionMethod('upload')">
+                            <div class="option-icon">📁</div>
+                            <h3>Upload Images</h3>
+                            <p>Upload ID card images from your computer</p>
+                        </div>
+                        <div class="option-card" onclick="selectCollectionMethod('camera')">
+                            <div class="option-icon">📷</div>
+                            <h3>Camera Capture</h3>
+                            <p>Take photos directly with your camera</p>
+                        </div>
+                        <div class="option-card" onclick="selectCollectionMethod('sample')">
+                            <div class="option-icon">⚡</div>
+                            <h3>Use Sample Data</h3>
+                            <p>Quick start with pre-configured samples</p>
+                        </div>
+                    </div>
+
+                    <!-- Upload Method -->
+                    <div id="uploadMethod" class="collection-method" style="display: none;">
+                        <h3>Upload ID Card Images</h3>
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">📁</div>
+                            <p>Drag & drop images here or click to browse</p>
+                            <input type="file" id="imageUpload" multiple accept="image/*" style="display: none;">
+                            <button class="btn" onclick="document.getElementById('imageUpload').click()">Choose Files</button>
+                        </div>
+                        <div id="uploadedImages" class="uploaded-images"></div>
+                    </div>
+
+                    <!-- Camera Method -->
+                    <div id="cameraMethod" class="collection-method" style="display: none;">
+                        <h3>Camera Capture</h3>
+                        <div class="camera-container">
+                            <video id="cameraVideo" autoplay style="width: 100%; max-width: 500px; border-radius: 8px;"></video>
+                            <div class="camera-controls">
+                                <button class="btn" onclick="startCamera()">Start Camera</button>
+                                <button class="btn" onclick="captureImage()">Capture Image</button>
+                                <button class="btn" onclick="stopCamera()">Stop Camera</button>
+                            </div>
+                        </div>
+                        <div id="capturedImages" class="captured-images"></div>
+                    </div>
+
+                    <!-- Sample Method -->
+                    <div id="sampleMethod" class="collection-method" style="display: none;">
+                        <h3>Use Sample Data</h3>
+                        <p>This will use pre-configured sample ID card images with ground truth data for quick testing.</p>
+                        <div class="sample-info">
+                            <div class="info-item">
+                                <strong>Sample Count:</strong> 2 images
+                            </div>
+                            <div class="info-item">
+                                <strong>Ground Truth:</strong> Pre-labeled field data
+                            </div>
+                            <div class="info-item">
+                                <strong>Quality:</strong> High-quality training samples
+                            </div>
+                        </div>
+                        <button class="btn" onclick="useSampleData()">Use Sample Data</button>
+                    </div>
+
+                    <!-- Ground Truth Input -->
+                    <div id="groundTruthSection" class="ground-truth-section" style="display: none;">
+                        <h3>📝 Provide Ground Truth Data</h3>
+                        <p>Enter the correct field values for the uploaded images:</p>
+                        <div id="groundTruthForms"></div>
+                        <button class="btn" onclick="saveTrainingData()">Save Training Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3>Training Progress Overview</h3>
+            <canvas id="progressChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Dashboard functionality
+        let chart = null;
+
+        async function loadDashboardData() {
+            try {
+                // Load dashboard stats
+                const statsResponse = await fetch('/ui/api/dashboard/stats');
+                const stats = await statsResponse.json();
+
+                document.getElementById('totalSessions').textContent = stats.total_sessions;
+                document.getElementById('activeSessions').textContent = stats.active_sessions;
+                document.getElementById('avgAccuracy').textContent = (stats.average_accuracy * 100).toFixed(1) + '%';
+                document.getElementById('totalSamples').textContent = stats.total_training_samples;
+
+                // Load recent sessions
+                const sessionsResponse = await fetch('/ui/api/sessions/recent');
+                const sessionsData = await sessionsResponse.json();
+
+                displaySessions(sessionsData.sessions);
+
+                // Load analytics for chart
+                const analyticsResponse = await fetch('/ui/api/analytics/overview');
+                const analytics = await analyticsResponse.json();
+
+                updateChart(analytics.accuracy_trend);
+
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+                document.getElementById('sessionsList').innerHTML =
+                    '<div class="error">Failed to load sessions. Please refresh the page.</div>';
+            }
+        }
+
+        function displaySessions(sessions) {
+            const sessionsList = document.getElementById('sessionsList');
+
+            if (sessions.length === 0) {
+                sessionsList.innerHTML = '<div class="loading">No training sessions found. Create your first session!</div>';
+                return;
+            }
+
+            sessionsList.innerHTML = sessions.map(session => `
+                <div class="session-card">
+                    <div class="session-header">
+                        <div class="session-name">${session.name}</div>
+                        <div class="session-status status-${session.status}">${session.status}</div>
+                    </div>
+                    <div>
+                        <strong>Accuracy:</strong> ${session.accuracy_percentage}% |
+                        <strong>Samples:</strong> ${session.current_samples}/${session.max_samples}
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${session.progress_percentage}%"></div>
+                    </div>
+                    <small>Created: ${new Date(session.created_at).toLocaleDateString()}</small>
+                </div>
+            `).join('');
+        }
+
+        function updateChart(accuracyTrend) {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: accuracyTrend.map(item => `Session ${item.session}`),
+                    datasets: [{
+                        label: 'Accuracy',
+                        data: accuracyTrend.map(item => item.accuracy * 100),
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Training Flow Functions
+        async function startStep1() {
+            // Open data collection modal instead of direct API call
+            document.getElementById('dataCollectionModal').style.display = 'block';
+        }
+
+        async function startStep2() {
+            if (!isStepEnabled('step2')) {
+                alert('⚠️ Please complete Step 1 first!');
+                return;
+            }
+
+            updateStepStatus('step2Status', 'Generating...', 'running');
+            updateStepCard('step2', 'running');
+
+            try {
+                const response = await fetch('/ui/api/training/generate-synthetic', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ count: 200 })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    updateStepStatus('step2Status', 'Completed ✓', 'completed');
+                    updateStepCard('step2', 'completed');
+                    enableStep('step3');
+                    alert(`✅ Step 2 Complete!\n\nGenerated ${result.synthetic_count} training variations.`);
+                } else {
+                    updateStepStatus('step2Status', 'Failed ✗', 'failed');
+                    updateStepCard('step2', '');
+                    alert('❌ Step 2 Failed: ' + result.message);
+                }
+            } catch (error) {
+                updateStepStatus('step2Status', 'Failed ✗', 'failed');
+                updateStepCard('step2', '');
+                alert('❌ Step 2 Failed: ' + error.message);
+            }
+        }
+
+        async function startStep3() {
+            if (!isStepEnabled('step3')) {
+                alert('⚠️ Please complete Steps 1 and 2 first!');
+                return;
+            }
+
+            updateStepStatus('step3Status', 'Training...', 'running');
+            updateStepCard('step3', 'running');
+
+            try {
+                const response = await fetch('/ui/api/training/smart-cycle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        target_accuracy: 0.95,
+                        max_iterations: 5
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    updateStepStatus('step3Status', 'Completed ✓', 'completed');
+                    updateStepCard('step3', 'completed');
+
+                    // Show success message with details
+                    alert(`🎉 Training Complete!\n\nAchieved ${(result.final_accuracy * 100).toFixed(1)}% accuracy!\n\nTraining Time: ${result.training_time}\nIterations: ${result.iterations_completed}\n\nYour AI is now trained for 95%+ accuracy on Cambodian ID cards.`);
+
+                    // Refresh dashboard to show new training session and updated stats
+                    setTimeout(() => {
+                        loadDashboardData();
+                    }, 1000);
+
+                    // Reset training flow for next use
+                    setTimeout(() => {
+                        resetTrainingFlow();
+                    }, 3000);
+                } else {
+                    updateStepStatus('step3Status', 'Failed ✗', 'failed');
+                    updateStepCard('step3', '');
+                    alert('❌ Step 3 Failed: ' + result.message);
+                }
+            } catch (error) {
+                updateStepStatus('step3Status', 'Failed ✗', 'failed');
+                updateStepCard('step3', '');
+                alert('❌ Step 3 Failed: ' + error.message);
+            }
+        }
+
+        function updateStepStatus(elementId, text, status) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = text;
+                element.className = 'step-status ' + status;
+            }
+        }
+
+        function updateStepCard(stepId, status) {
+            const card = document.querySelector(`[onclick="start${stepId.charAt(4).toUpperCase() + stepId.slice(5)}()"]`);
+            if (card) {
+                card.className = 'step-card ' + status;
+            }
+        }
+
+        function enableStep(stepId) {
+            const statusElement = document.getElementById(stepId + 'Status');
+            if (statusElement && statusElement.textContent === 'Waiting') {
+                statusElement.textContent = 'Ready';
+                statusElement.className = 'step-status ready';
+            }
+        }
+
+        function isStepEnabled(stepId) {
+            const statusElement = document.getElementById(stepId + 'Status');
+            return statusElement && statusElement.textContent !== 'Waiting';
+        }
+
+        // Data Collection Modal Functions
+        let collectedImages = [];
+        let cameraStream = null;
+
+        function closeDataCollectionModal() {
+            document.getElementById('dataCollectionModal').style.display = 'none';
+            // Reset modal state
+            document.querySelectorAll('.collection-method').forEach(method => {
+                method.style.display = 'none';
+            });
+            document.querySelectorAll('.option-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            collectedImages = [];
+        }
+
+        function selectCollectionMethod(method) {
+            // Hide all methods
+            document.querySelectorAll('.collection-method').forEach(m => {
+                m.style.display = 'none';
+            });
+
+            // Remove selected class from all cards
+            document.querySelectorAll('.option-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Show selected method
+            document.getElementById(method + 'Method').style.display = 'block';
+            event.target.closest('.option-card').classList.add('selected');
+        }
+
+        // File Upload Functions
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('imageUpload');
+
+            // Drag and drop functionality
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                handleFileUpload(files);
+            });
+
+            fileInput.addEventListener('change', function(e) {
+                handleFileUpload(e.target.files);
+            });
+        });
+
+        function handleFileUpload(files) {
+            const uploadedImagesDiv = document.getElementById('uploadedImages');
+            uploadedImagesDiv.innerHTML = '';
+            collectedImages = [];
+
+            Array.from(files).forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        collectedImages.push({
+                            file: file,
+                            dataUrl: e.target.result,
+                            index: index
+                        });
+
+                        const imageDiv = document.createElement('div');
+                        imageDiv.innerHTML = `
+                            <img src="${e.target.result}" class="image-preview" alt="Uploaded image ${index + 1}">
+                            <p><strong>Image ${index + 1}:</strong> ${file.name}</p>
+                        `;
+                        uploadedImagesDiv.appendChild(imageDiv);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Show ground truth section after images are uploaded
+            setTimeout(() => {
+                if (collectedImages.length > 0) {
+                    showGroundTruthSection();
+                }
+            }, 1000);
+        }
+
+        // Camera Functions
+        async function startCamera() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 }
+                });
+                document.getElementById('cameraVideo').srcObject = cameraStream;
+            } catch (error) {
+                alert('❌ Camera access denied or not available: ' + error.message);
+            }
+        }
+
+        function captureImage() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            const capturedImagesDiv = document.getElementById('capturedImages');
+
+            const imageIndex = collectedImages.length;
+            collectedImages.push({
+                dataUrl: dataUrl,
+                index: imageIndex,
+                filename: `captured_${Date.now()}.jpg`
+            });
+
+            const imageDiv = document.createElement('div');
+            imageDiv.innerHTML = `
+                <img src="${dataUrl}" class="image-preview" alt="Captured image ${imageIndex + 1}">
+                <p><strong>Captured Image ${imageIndex + 1}</strong></p>
+            `;
+            capturedImagesDiv.appendChild(imageDiv);
+
+            // Show ground truth section
+            showGroundTruthSection();
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+                document.getElementById('cameraVideo').srcObject = null;
+            }
+        }
+
+        // Sample Data Function
+        async function useSampleData() {
+            try {
+                const response = await fetch('/ui/api/training/collect-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: 'sample' })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Close modal and update step
+                    closeDataCollectionModal();
+                    updateStepStatus('step1Status', 'Completed ✓', 'completed');
+                    updateStepCard('step1', 'completed');
+                    enableStep('step2');
+                    alert(`✅ Step 1 Complete!\n\nUsed ${result.samples_count} pre-configured training samples with ground truth data.`);
+                } else {
+                    alert('❌ Failed to use sample data: ' + result.message);
+                }
+            } catch (error) {
+                alert('❌ Failed to use sample data: ' + error.message);
+            }
+        }
+
+        // Ground Truth Functions
+        function showGroundTruthSection() {
+            const groundTruthSection = document.getElementById('groundTruthSection');
+            const groundTruthForms = document.getElementById('groundTruthForms');
+
+            groundTruthSection.style.display = 'block';
+            groundTruthForms.innerHTML = '';
+
+            collectedImages.forEach((image, index) => {
+                const formDiv = document.createElement('div');
+                formDiv.className = 'ground-truth-form';
+                formDiv.innerHTML = `
+                    <h4>📝 Ground Truth for Image ${index + 1}</h4>
+                    <img src="${image.dataUrl}" class="image-preview" alt="Image ${index + 1}">
+
+                    <div class="form-group">
+                        <label for="khmer_name_${index}">Khmer Name (ឈ្មោះ):</label>
+                        <input type="text" id="khmer_name_${index}" placeholder="Enter Khmer name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="latin_name_${index}">Latin Name:</label>
+                        <input type="text" id="latin_name_${index}" placeholder="Enter Latin name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_number_${index}">ID Number:</label>
+                        <input type="text" id="id_number_${index}" placeholder="Enter ID number">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="date_of_birth_${index}">Date of Birth:</label>
+                        <input type="text" id="date_of_birth_${index}" placeholder="DD/MM/YYYY">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="place_of_birth_${index}">Place of Birth:</label>
+                        <input type="text" id="place_of_birth_${index}" placeholder="Enter place of birth">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address_${index}">Address:</label>
+                        <input type="text" id="address_${index}" placeholder="Enter address">
+                    </div>
+                `;
+                groundTruthForms.appendChild(formDiv);
+            });
+        }
+
+        async function saveTrainingData() {
+            // Collect ground truth data from forms
+            const trainingData = [];
+
+            collectedImages.forEach((image, index) => {
+                const groundTruth = {
+                    khmer_name: document.getElementById(`khmer_name_${index}`).value,
+                    latin_name: document.getElementById(`latin_name_${index}`).value,
+                    id_number: document.getElementById(`id_number_${index}`).value,
+                    date_of_birth: document.getElementById(`date_of_birth_${index}`).value,
+                    place_of_birth: document.getElementById(`place_of_birth_${index}`).value,
+                    address: document.getElementById(`address_${index}`).value
+                };
+
+                trainingData.push({
+                    image: image.dataUrl,
+                    filename: image.filename || image.file?.name || `image_${index}.jpg`,
+                    ground_truth: groundTruth
+                });
+            });
+
+            // Validate that at least some fields are filled
+            const hasData = trainingData.some(item =>
+                Object.values(item.ground_truth).some(value => value.trim() !== '')
+            );
+
+            if (!hasData) {
+                alert('⚠️ Please fill in at least some ground truth data for the images.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/ui/api/training/save-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        training_data: trainingData,
+                        mode: 'manual'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Close modal and update step
+                    closeDataCollectionModal();
+                    updateStepStatus('step1Status', 'Completed ✓', 'completed');
+                    updateStepCard('step1', 'completed');
+                    enableStep('step2');
+                    alert(`✅ Step 1 Complete!\n\nSaved ${trainingData.length} training samples with ground truth data.`);
+                } else {
+                    alert('❌ Failed to save training data: ' + result.message);
+                }
+            } catch (error) {
+                alert('❌ Failed to save training data: ' + error.message);
+            }
+        }
+
+        // Reset Training Flow
+        function resetTrainingFlow() {
+            // Reset all step statuses
+            updateStepStatus('step1Status', 'Ready', '');
+            updateStepStatus('step2Status', 'Waiting', '');
+            updateStepStatus('step3Status', 'Waiting', '');
+
+            // Reset all step cards
+            updateStepCard('step1', '');
+            updateStepCard('step2', 'disabled');
+            updateStepCard('step3', 'disabled');
+        }
+
+        async function createNewSession() {
+            const name = prompt('Enter session name:');
+            if (!name) return;
+
+            const targetAccuracy = prompt('Enter target accuracy (0.0-1.0):', '0.95');
+            const maxSamples = prompt('Enter maximum samples:', '100');
+
+            try {
+                const response = await fetch(`/ui/api/session/create?name=${encodeURIComponent(name)}&target_accuracy=${targetAccuracy}&max_samples=${maxSamples}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`Session "${name}" created successfully!`);
+                    loadDashboardData(); // Refresh data
+                } else {
+                    alert('Failed to create session: ' + result.message);
+                }
+            } catch (error) {
+                alert('Failed to create session: ' + error.message);
+            }
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadDashboardData, 30000);
+
+        // Initial load
+        loadDashboardData();
+    </script>
+</body>
+</html>

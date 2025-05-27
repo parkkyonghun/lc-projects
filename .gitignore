@@ -1,48 +1,64 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Virtual environments
+# Virtual Environment
 venv/
 env/
-.venv/
-.env/
+ENV/
 
-# Distribution / packaging
-build/
-dist/
-*.egg-info/
-.eggs/
-
-# PyInstaller
-*.spec
-
-# Test and coverage
-.coverage
-.tox/
-.nox/
-.cache/
-.pytest_cache/
-
-# IDEs and editors
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints/
-
-# mypy
-.mypy_cache/
-
-# pipenv
-Pipfile.lock
-
-# dotenv
-.env
-
-# Other
+# OS
 .DS_Store
 Thumbs.db
+
+# Training Data (keep structure, ignore content)
+training_data/raw_images/*.jpg
+training_data/raw_images/*.png
+training_data/processed_images/*.jpg
+training_data/processed_images/*.png
+training_data/sessions/*/
+training_data/*.db
+
+# Test Results
+test_results/
+extreme_test_results/
+extreme_ocr_results/
+
+# Temporary Files
+*.tmp
+*.log
+*~
+
+# Model Files (large files)
+*.pkl
+*.h5
+*.pth
+*.onnx
+
+# Environment Variables
+.env
+.env.local

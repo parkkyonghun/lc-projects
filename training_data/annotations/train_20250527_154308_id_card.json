@@ -1,0 +1,21 @@
+{
+  "filename": "train_20250527_154308_id_card.jpg",
+  "ground_truth": {
+    "name_kh": "ស",
+    "name_en": "Srey Pov",
+    "nationality": "Cambodian"
+  },
+  "image_size": [
+    1114,
+    800
+  ],
+  "created_at": "2025-05-27T15:43:08.179468",
+  "fields": {
+    "name_kh": "ស",
+    "name_en": "Srey Pov",
+    "id_number": "",
+    "date_of_birth": "",
+    "gender": "",
+    "nationality": "Cambodian"
+  }
+}
