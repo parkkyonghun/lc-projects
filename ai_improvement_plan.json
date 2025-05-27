@@ -1,26 +1,125 @@
 {
   "immediate_actions": [
+    "🚨 PRIORITY: Fix GPU acceleration for AI OCR models",
+    "Install OpenCV with CUDA support for GPU-accelerated image processing",
+    "Configure PyTorch models to use GPU device properly",
+    "Implement GPU-accelerated training pipeline",
+    "Add GPU memory optimization and monitoring",
+    "Integrate Khmer language resources from awesome-khmer-language repository",
+    "Implement Khmer text normalization and preprocessing",
+    "Add OCR benchmark dataset for evaluation",
+    "Set up synthetic Khmer data generation",
     "Collect 50+ more real ID card images",
     "Annotate ground truth for all collected images",
     "Implement active learning for difficult cases",
     "Set up automated performance monitoring"
   ],
   "short_term_goals": [
+    "🎯 Enable GPU acceleration for 10-50x performance improvement",
+    "Reduce AI enhancement processing time from 10-30s to 1-3s",
     "Achieve 95%+ field extraction accuracy",
-    "Reduce processing time to <2 seconds",
-    "Handle 10+ different image quality levels",
-    "Support multiple ID card layouts"
+    "Implement GPU-accelerated Khmer-specific OCR optimizations",
+    "Add pre-trained Khmer models with GPU inference",
+    "Reduce total processing time to <2 seconds",
+    "Handle 10+ different image quality levels with GPU enhancement",
+    "Support multiple ID card layouts with GPU-accelerated preprocessing"
   ],
   "long_term_vision": [
     "Real-time OCR processing",
     "Multi-language support (Khmer + English + others)",
     "Edge deployment capabilities",
-    "Automated quality assessment and routing"
+    "Automated quality assessment and routing",
+    "Advanced Khmer script recognition",
+    "Integration with Khmer NLP tools"
   ],
   "data_collection_strategy": [
+    "Leverage Khmer OCR benchmark datasets",
+    "Use synthetic Khmer data generation tools",
+    "Implement Khmer text normalization pipeline",
     "Partner with organizations for diverse data",
     "Implement user feedback collection",
     "Create data augmentation pipeline",
     "Establish data quality standards"
-  ]
+  ],
+  "khmer_integration_plan": {
+    "phase_1_preprocessing": [
+      "Install khmer-normalizer for text standardization",
+      "Add khmertokenizer for proper word segmentation",
+      "Implement Khmer character validation",
+      "Set up Unicode normalization pipeline"
+    ],
+    "phase_2_datasets": [
+      "Download khmer-ocr-benchmark-dataset",
+      "Integrate Khmer dictionary (44k entries)",
+      "Add synthetic data generation tools",
+      "Set up evaluation benchmarks"
+    ],
+    "phase_3_models": [
+      "Integrate pre-trained Khmer OCR models",
+      "Add XLM-RoBERTa Khmer models",
+      "Implement transfer learning pipeline",
+      "Set up model fine-tuning workflow"
+    ],
+    "phase_4_optimization": [
+      "Implement Khmer-specific OCR configurations",
+      "Add language-aware preprocessing",
+      "Optimize for Cambodian ID card layouts",
+      "Set up continuous improvement pipeline"
+    ]
+  },
+  "khmer_integration_status": {
+    "setup_completed": true,
+    "setup_date": "2025-01-27",
+    "components_ready": [
+      "khmer_language_integration",
+      "khmer_text_processor",
+      "khmer_training_enhancer"
+    ],
+    "immediate_next_steps": [
+      "🚨 URGENT: Fix GPU acceleration setup",
+      "Test integration with test_khmer_integration.py",
+      "Run enhanced training data collection",
+      "Generate synthetic Khmer training data",
+      "Evaluate OCR performance improvements"
+    ]
+  },
+  "gpu_optimization_plan": {
+    "current_status": {
+      "gpu_hardware": "NVIDIA GeForce GTX 1070 (8GB VRAM)",
+      "cuda_version": "12.6",
+      "pytorch_gpu": "✅ Available",
+      "opencv_gpu": "❌ Missing CUDA support",
+      "current_performance": "CPU-only processing (slow)",
+      "bottlenecks": [
+        "OpenCV without CUDA support",
+        "AI models not utilizing GPU",
+        "Image preprocessing on CPU only",
+        "Training pipeline not GPU-optimized"
+      ]
+    },
+    "phase_1_immediate_fixes": [
+      "Install opencv-contrib-python with CUDA support",
+      "Verify GPU device selection in AI enhancement",
+      "Add GPU memory monitoring and optimization",
+      "Test GPU acceleration with sample images"
+    ],
+    "phase_2_model_optimization": [
+      "Configure PyTorch models to use CUDA device",
+      "Implement GPU-accelerated training pipeline",
+      "Add batch processing for GPU efficiency",
+      "Optimize memory usage for GTX 1070 (8GB limit)"
+    ],
+    "phase_3_performance_tuning": [
+      "Benchmark CPU vs GPU performance",
+      "Optimize GPU memory allocation",
+      "Implement mixed precision training",
+      "Add GPU utilization monitoring"
+    ],
+    "expected_improvements": {
+      "image_enhancement": "10-30x faster",
+      "model_training": "50-200x faster",
+      "inference_speed": "5-25x faster",
+      "total_processing_time": "Reduce from 10-30s to 1-3s"
+    }
+  }
 }
