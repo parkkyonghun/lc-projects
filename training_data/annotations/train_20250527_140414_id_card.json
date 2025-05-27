@@ -1,0 +1,24 @@
+{
+  "filename": "train_20250527_140414_id_card.jpg",
+  "ground_truth": {
+    "name_kh": "ស្រី ពៅ",
+    "name_en": "SREY POV",
+    "id_number": "34323458",
+    "date_of_birth": "03.08.1999",
+    "gender": "Female",
+    "nationality": "Cambodian"
+  },
+  "image_size": [
+    1114,
+    800
+  ],
+  "created_at": "2025-05-27T14:04:14.181856",
+  "fields": {
+    "name_kh": "ស្រី ពៅ",
+    "name_en": "SREY POV",
+    "id_number": "34323458",
+    "date_of_birth": "03.08.1999",
+    "gender": "Female",
+    "nationality": "Cambodian"
+  }
+}

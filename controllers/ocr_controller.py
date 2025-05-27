@@ -5,7 +5,20 @@ import pytesseract
 import io
 import re
 import logging
+import numpy as np
 from typing import Optional, Dict
+
+# Import our enhanced preprocessing utilities
+from image_enhancement_utils import create_preprocessing_pipeline
+from enhancement_config import get_config_by_name, KHMER_ID_CARD_CONFIG
+
+# Import AI-powered enhancement
+from ai_image_enhancement import create_ai_enhancer, assess_enhancement_potential
+from ai_enhancement_config import get_config_by_name as get_ai_config, auto_select_config
+
+# Import extreme enhancement and robust parsing
+from extreme_enhancement import enhance_with_multiple_approaches, get_best_enhanced_image
+from robust_ocr_parser import parse_ocr_robust
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -14,7 +27,28 @@ logger = logging.getLogger("KhmerIDOCR")
 # Path to Tesseract executable (Windows only)
 pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
-async def process_cambodian_id_ocr(file: UploadFile) -> CambodianIDCardOCRResult:
+async def process_cambodian_id_ocr(
+    file: UploadFile,
+    use_enhanced_preprocessing: bool = True,
+    use_ai_enhancement: bool = False,
+    use_extreme_enhancement: bool = False,
+    enhancement_mode: str = "auto",
+    use_robust_parsing: bool = True
+) -> CambodianIDCardOCRResult:
+    """
+    Process Cambodian ID card OCR with advanced AI-powered enhancement options.
+
+    Args:
+        file: Uploaded image file
+        use_enhanced_preprocessing: Whether to use the enhanced preprocessing pipeline
+        use_ai_enhancement: Whether to use AI-powered enhancement for ultra-low quality images
+        use_extreme_enhancement: Whether to use extreme enhancement for severely damaged images
+        enhancement_mode: Enhancement mode ('auto', 'ultra_low_quality', 'low_quality', 'khmer_optimized', 'high_performance')
+        use_robust_parsing: Whether to use robust parsing for poor quality OCR text
+
+    Returns:
+        CambodianIDCardOCRResult with extracted data
+    """
     try:
         # Validate file type
         if not file.content_type.startswith("image/"):
@@ -24,17 +58,53 @@ async def process_cambodian_id_ocr(file: UploadFile) -> CambodianIDCardOCRResult
         image_bytes = await file.read()
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
 
-        # Preprocess image for better OCR accuracy
-        processed_image = preprocess_image(image)
+        logger.info(f"Processing image: {image.size}, mode: {image.mode}")
+
+        # Choose preprocessing method based on parameters (priority order)
+        if use_extreme_enhancement:
+            # Use extreme enhancement for severely damaged images
+            processed_image = await _apply_extreme_enhancement(image)
+            logger.info("Applied extreme enhancement for severely damaged image")
+        elif use_ai_enhancement:
+            # Use AI-powered enhancement for ultra-low quality images
+            processed_image = await _apply_ai_enhancement(image, enhancement_mode)
+            logger.info(f"Applied AI enhancement with mode: {enhancement_mode}")
+        elif use_enhanced_preprocessing:
+            # Use enhanced preprocessing pipeline
+            enhancer = create_preprocessing_pipeline(target_dpi=300, debug=False)
+            processed_image = enhancer.enhance_for_ocr(image)
+            logger.info("Applied enhanced preprocessing pipeline")
+        else:
+            # Use legacy preprocessing
+            processed_image = preprocess_image(image, debug=False)
+            logger.info("Applied legacy preprocessing")
+
+        # Optimized Tesseract configuration for Khmer ID cards
+        # PSM 11: Sparse text (good for ID cards with scattered text fields)
+        # OEM 1: LSTM engine only (best for modern OCR)
+        # preserve_interword_spaces: Important for Khmer script
+        # DPI setting: Helps Tesseract understand image resolution
+        tesseract_config = (
+            '--oem 1 --psm 11 '
+            '-c preserve_interword_spaces=1 '
+            '--dpi 300 '
+            '-c load_system_dawg=0 '
+            '-c load_freq_dawg=0'
+        )
 
         # Run Tesseract OCR with language-specific optimizations
-        # Using PSM 11 (Sparse text) as it's generally better for ID cards with scattered text fields.
-        # OEM 1 (LSTM engine) is already correctly used.
-        khmer_text = pytesseract.image_to_string(processed_image, lang='khm', config='--oem 1 --psm 11')
-        english_text = pytesseract.image_to_string(processed_image, lang='eng', config='--oem 1 --psm 11')
+        khmer_text = pytesseract.image_to_string(processed_image, lang='khm', config=tesseract_config)
+        english_text = pytesseract.image_to_string(processed_image, lang='eng', config=tesseract_config)
 
-        # Parse Khmer and English text
-        parsed_data = parse_cambodian_id_ocr(khmer_text, english_text)
+        logger.info(f"OCR completed - Khmer: {len(khmer_text)} chars, English: {len(english_text)} chars")
+
+        # Parse Khmer and English text using appropriate parser
+        if use_robust_parsing:
+            parsed_data = parse_ocr_robust(khmer_text, english_text)
+            logger.info("Used robust OCR parsing")
+        else:
+            parsed_data = parse_cambodian_id_ocr(khmer_text, english_text)
+            logger.info("Used standard OCR parsing")
 
         # Return structured result
         return CambodianIDCardOCRResult(
@@ -56,54 +126,391 @@ async def process_cambodian_id_ocr(file: UploadFile) -> CambodianIDCardOCRResult
         raise HTTPException(status_code=500, detail=f"OCR processing failed: {str(e)}")
 
 
-def preprocess_image(image: Image.Image) -> Image.Image:
-    """Enhance image quality for OCR with DPI, grayscale, adaptive threshold, contrast, and noise reduction."""
-    # Resize to 300 DPI equivalent (Tesseract expects 300 DPI for best results)
-    # If image has DPI info, use it; otherwise, assume 72 DPI and scale accordingly
-    dpi = image.info.get('dpi', (72, 72))[0]
-    scale_factor = 300 / dpi if dpi != 300 else 1
-    new_size = (int(image.width * scale_factor), int(image.height * scale_factor))
-    if scale_factor != 1:
-        image = image.resize(new_size, resample=Image.BICUBIC)
-    
-    # Convert to grayscale
-    image_l = image.convert("L") # Work on a grayscale copy for cv2 processing
-    
-    # Convert PIL Image to OpenCV format
+async def _apply_ai_enhancement(image: Image.Image, enhancement_mode: str) -> Image.Image:
+    """
+    Apply AI-powered enhancement to the image.
+
+    Args:
+        image: Input PIL Image
+        enhancement_mode: Enhancement mode to use
+
+    Returns:
+        Enhanced PIL Image
+    """
+    try:
+        # Assess image quality first
+        assessment = assess_enhancement_potential(image)
+        logger.info(f"Image quality assessment: score={assessment['quality_score']:.3f}, "
+                   f"priority={assessment['enhancement_priority']}")
+
+        # Select configuration based on mode
+        if enhancement_mode == "auto":
+            # Auto-select based on image characteristics
+            config = auto_select_config(
+                assessment['quality_score'],
+                image.size,
+                processing_priority='quality'
+            )
+            logger.info("Auto-selected AI enhancement configuration")
+        else:
+            # Use specified configuration
+            config = get_ai_config(enhancement_mode)
+            logger.info(f"Using AI enhancement configuration: {enhancement_mode}")
+
+        # Create AI enhancer
+        ai_enhancer = create_ai_enhancer(use_gpu=config.use_gpu)
+
+        # Apply AI enhancement
+        enhanced_image = ai_enhancer.enhance_ultra_low_quality(image)
+
+        logger.info("AI enhancement completed successfully")
+        return enhanced_image
+
+    except Exception as e:
+        logger.error(f"AI enhancement failed: {str(e)}")
+        # Fallback to regular enhanced preprocessing
+        logger.info("Falling back to regular enhanced preprocessing")
+        enhancer = create_preprocessing_pipeline(target_dpi=300, debug=False)
+        return enhancer.enhance_for_ocr(image)
+
+
+async def _apply_extreme_enhancement(image: Image.Image) -> Image.Image:
+    """
+    Apply extreme enhancement for severely damaged images.
+
+    Args:
+        image: Input PIL Image
+
+    Returns:
+        Best enhanced PIL Image
+    """
+    try:
+        logger.info("Applying extreme enhancement for severely damaged image")
+
+        # Get the best enhanced version from multiple approaches
+        enhanced_image = get_best_enhanced_image(image)
+
+        logger.info("Extreme enhancement completed successfully")
+        return enhanced_image
+
+    except Exception as e:
+        logger.error(f"Extreme enhancement failed: {str(e)}")
+        # Fallback to AI enhancement
+        logger.info("Falling back to AI enhancement")
+        try:
+            return await _apply_ai_enhancement(image, "ultra_low_quality")
+        except:
+            # Final fallback to regular enhanced preprocessing
+            logger.info("Falling back to regular enhanced preprocessing")
+            enhancer = create_preprocessing_pipeline(target_dpi=300, debug=False)
+            return enhancer.enhance_for_ocr(image)
+
+
+def preprocess_image(image: Image.Image, debug: bool = False) -> Image.Image:
+    """
+    Enhanced image preprocessing for optimal Tesseract OCR results.
+
+    Args:
+        image: Input PIL Image
+        debug: If True, saves intermediate processing steps for debugging
+
+    Returns:
+        Preprocessed PIL Image optimized for OCR
+    """
     import numpy as np
-    import cv2 # Ensure cv2 is imported
+    import cv2
+    from typing import Tuple
 
-    img_cv = np.array(image_l)
+    # Step 1: Resize to optimal DPI (300 DPI is ideal for Tesseract)
+    image = _resize_to_optimal_dpi(image)
 
-    # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    img_cv = clahe.apply(img_cv)
-    
-    # Apply bilateral filter to reduce noise while preserving edges
-    img_cv = cv2.bilateralFilter(img_cv, 9, 75, 75) # Parameters (d, sigmaColor, sigmaSpace)
-    
-    # Apply adaptive thresholding (Gaussian)
-    # Block size and C value might need tuning for Khmer script.
-    # Using parameters similar to tesseract_ocr_utils for consistency, but these can be fine-tuned.
-    img_cv = cv2.adaptiveThreshold(
-        img_cv, 255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY, 11, 7 
+    # Step 2: Convert to grayscale
+    image_gray = image.convert("L")
+    img_cv = np.array(image_gray)
+
+    if debug:
+        cv2.imwrite("debug_01_grayscale.png", img_cv)
+
+    # Step 3: Detect and correct skew
+    img_cv = _correct_skew(img_cv)
+
+    if debug:
+        cv2.imwrite("debug_02_deskewed.png", img_cv)
+
+    # Step 4: Remove shadows and improve lighting
+    img_cv = _remove_shadows(img_cv)
+
+    if debug:
+        cv2.imwrite("debug_03_shadow_removed.png", img_cv)
+
+    # Step 5: Enhanced contrast and brightness adjustment
+    img_cv = _enhance_contrast_adaptive(img_cv)
+
+    if debug:
+        cv2.imwrite("debug_04_contrast_enhanced.png", img_cv)
+
+    # Step 6: Advanced noise reduction
+    img_cv = _advanced_noise_reduction(img_cv)
+
+    if debug:
+        cv2.imwrite("debug_05_denoised.png", img_cv)
+
+    # Step 7: Optimized binarization for text
+    img_cv = _optimal_binarization(img_cv)
+
+    if debug:
+        cv2.imwrite("debug_06_binarized.png", img_cv)
+
+    # Step 8: Text-specific morphological operations
+    img_cv = _text_morphological_operations(img_cv)
+
+    if debug:
+        cv2.imwrite("debug_07_morphological.png", img_cv)
+
+    # Step 9: Final quality enhancement
+    img_cv = _final_quality_enhancement(img_cv)
+
+    if debug:
+        cv2.imwrite("debug_08_final.png", img_cv)
+
+    # Convert back to PIL Image
+    result_image = Image.fromarray(img_cv)
+    result_image.info['dpi'] = (300, 300)
+
+    return result_image
+
+
+def _resize_to_optimal_dpi(image: Image.Image) -> Image.Image:
+    """Resize image to optimal DPI for OCR (300 DPI)."""
+    dpi = image.info.get('dpi', (72, 72))[0]
+
+    # Calculate scale factor for 300 DPI
+    target_dpi = 300
+    scale_factor = target_dpi / dpi if dpi != target_dpi else 1
+
+    # Ensure minimum size for small images
+    min_width, min_height = 800, 600
+    current_width, current_height = image.size
+
+    # Calculate new size
+    new_width = max(int(current_width * scale_factor), min_width)
+    new_height = max(int(current_height * scale_factor), min_height)
+
+    # Use high-quality resampling
+    if scale_factor != 1 or new_width != current_width or new_height != current_height:
+        image = image.resize((new_width, new_height), resample=Image.LANCZOS)
+
+    return image
+
+
+def _correct_skew(img: np.ndarray) -> np.ndarray:
+    """Detect and correct skew in the image."""
+    import cv2
+
+    # Create a copy for skew detection
+    edges = cv2.Canny(img, 50, 150, apertureSize=3)
+
+    # Use HoughLines to detect lines
+    lines = cv2.HoughLines(edges, 1, np.pi/180, threshold=100)
+
+    if lines is not None:
+        angles = []
+        for rho, theta in lines[:, 0]:
+            angle = theta * 180 / np.pi
+            # Convert to skew angle (-45 to 45 degrees)
+            if angle > 90:
+                angle = angle - 180
+            elif angle > 45:
+                angle = angle - 90
+            elif angle < -45:
+                angle = angle + 90
+
+            # Only consider reasonable skew angles
+            if -30 <= angle <= 30:
+                angles.append(angle)
+
+        if angles:
+            # Use median angle to avoid outliers
+            skew_angle = np.median(angles)
+
+            # Only correct if skew is significant (> 0.5 degrees)
+            if abs(skew_angle) > 0.5:
+                # Get image center and rotation matrix
+                (h, w) = img.shape[:2]
+                center = (w // 2, h // 2)
+                rotation_matrix = cv2.getRotationMatrix2D(center, skew_angle, 1.0)
+
+                # Apply rotation
+                img = cv2.warpAffine(img, rotation_matrix, (w, h),
+                                   flags=cv2.INTER_CUBIC,
+                                   borderMode=cv2.BORDER_REPLICATE)
+
+    return img
+
+
+def _remove_shadows(img: np.ndarray) -> np.ndarray:
+    """Remove shadows and improve lighting uniformity."""
+    import cv2
+
+    # Create a large kernel for morphological operations
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20, 20))
+
+    # Estimate background using morphological opening
+    background = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+
+    # Smooth the background
+    background = cv2.medianBlur(background, 19)
+
+    # Subtract background to remove shadows
+    # Convert to float to avoid underflow
+    img_float = img.astype(np.float32)
+    background_float = background.astype(np.float32)
+
+    # Normalize by background
+    normalized = img_float / (background_float + 1e-6) * 255
+
+    # Clip values and convert back to uint8
+    result = np.clip(normalized, 0, 255).astype(np.uint8)
+
+    return result
+
+
+def _enhance_contrast_adaptive(img: np.ndarray) -> np.ndarray:
+    """Apply adaptive contrast enhancement optimized for text."""
+    import cv2
+
+    # Apply CLAHE with optimized parameters for text
+    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+    enhanced = clahe.apply(img)
+
+    # Additional gamma correction for better text visibility
+    gamma = 1.2
+    gamma_table = np.array([((i / 255.0) ** (1.0 / gamma)) * 255
+                           for i in np.arange(0, 256)]).astype("uint8")
+    enhanced = cv2.LUT(enhanced, gamma_table)
+
+    return enhanced
+
+
+def _advanced_noise_reduction(img: np.ndarray) -> np.ndarray:
+    """Apply advanced noise reduction while preserving text edges."""
+    import cv2
+
+    # Bilateral filter to reduce noise while preserving edges
+    denoised = cv2.bilateralFilter(img, 9, 75, 75)
+
+    # Non-local means denoising for additional noise reduction
+    denoised = cv2.fastNlMeansDenoising(denoised, None, 10, 7, 21)
+
+    return denoised
+
+
+def _optimal_binarization(img: np.ndarray) -> np.ndarray:
+    """Apply optimal binarization techniques for text recognition."""
+    import cv2
+
+    # Try multiple binarization methods and combine results
+
+    # Method 1: Adaptive Gaussian threshold
+    binary1 = cv2.adaptiveThreshold(
+        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
     )
 
-    # Apply morphological opening to remove small noise (optional, but can help)
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-    img_cv = cv2.morphologyEx(img_cv, cv2.MORPH_OPEN, kernel, iterations=1)
+    # Method 2: Adaptive Mean threshold
+    binary2 = cv2.adaptiveThreshold(
+        img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2
+    )
 
-    # Convert OpenCV image back to PIL Image
-    image = Image.fromarray(img_cv)
-    
-    # Optionally set DPI metadata for downstream tools (original image's DPI info was used for scaling)
-    # The image is now processed, its effective DPI related to content size vs pixel dimensions.
-    # Setting it to 300 can be a hint for Tesseract if it doesn't pick up from image properties.
-    image.info['dpi'] = (300, 300)
-    
-    return image
+    # Method 3: Otsu's threshold
+    _, binary3 = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # Combine methods using bitwise operations
+    # Take the intersection of adaptive methods for cleaner text
+    combined = cv2.bitwise_and(binary1, binary2)
+
+    # Use Otsu as fallback for areas where adaptive methods disagree
+    mask = cv2.bitwise_xor(binary1, binary2)
+    combined = cv2.bitwise_or(combined, cv2.bitwise_and(binary3, mask))
+
+    return combined
+
+
+def _text_morphological_operations(img: np.ndarray) -> np.ndarray:
+    """Apply morphological operations optimized for text."""
+    import cv2
+
+    # Remove small noise with opening
+    kernel_small = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
+    cleaned = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel_small, iterations=1)
+
+    # Connect broken text with closing
+    kernel_connect = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 1))
+    cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_CLOSE, kernel_connect, iterations=1)
+
+    # Strengthen text lines
+    kernel_strengthen = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 2))
+    cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_CLOSE, kernel_strengthen, iterations=1)
+
+    return cleaned
+
+
+def _final_quality_enhancement(img: np.ndarray) -> np.ndarray:
+    """Apply final quality enhancements for OCR."""
+    import cv2
+
+    # Ensure text is black on white background
+    # Count black vs white pixels to determine if inversion is needed
+    black_pixels = np.sum(img == 0)
+    white_pixels = np.sum(img == 255)
+
+    if black_pixels > white_pixels:
+        # More black than white, likely inverted
+        img = cv2.bitwise_not(img)
+
+    # Final smoothing to reduce jagged edges
+    kernel = np.ones((2, 2), np.uint8)
+    img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel, iterations=1)
+
+    return img
+
+
+def assess_image_quality(img: np.ndarray) -> Dict[str, float]:
+    """
+    Assess image quality metrics for OCR preprocessing validation.
+
+    Returns:
+        Dictionary with quality metrics
+    """
+    import cv2
+
+    # Calculate contrast (standard deviation of pixel values)
+    contrast = np.std(img)
+
+    # Calculate sharpness using Laplacian variance
+    laplacian = cv2.Laplacian(img, cv2.CV_64F)
+    sharpness = laplacian.var()
+
+    # Calculate brightness (mean pixel value)
+    brightness = np.mean(img)
+
+    # Calculate noise level (using high-frequency content)
+    kernel = np.array([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]])
+    noise = cv2.filter2D(img, -1, kernel)
+    noise_level = np.std(noise)
+
+    # Calculate text-to-background ratio
+    binary = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    text_pixels = np.sum(binary == 0)  # Assuming text is black
+    background_pixels = np.sum(binary == 255)
+    text_ratio = text_pixels / (text_pixels + background_pixels) if (text_pixels + background_pixels) > 0 else 0
+
+    return {
+        'contrast': float(contrast),
+        'sharpness': float(sharpness),
+        'brightness': float(brightness),
+        'noise_level': float(noise_level),
+        'text_ratio': float(text_ratio)
+    }
 
 
 def parse_cambodian_id_ocr(khmer_text: str, english_text: str) -> Dict[str, Optional[str]]:
@@ -218,7 +625,7 @@ def parse_cambodian_id_ocr(khmer_text: str, english_text: str) -> Dict[str, Opti
                 logger.info(f"Fallback English gender: {data['gender']}")
             else:
                 logger.warning("Gender not found in OCR output.")
-    
+
     # Nationality: Khmer first, fallback to English. Default to "Cambodian".
     nationality_match_kh = re.search(r"សញ្ជាតិ\s*[:\s]*\s*([\u1780-\u17FF ]+)", khmer_text) # Label: សញ្ជាតិ, capture Khmer chars and spaces
     if nationality_match_kh:
