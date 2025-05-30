@@ -7,7 +7,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from models.user import User
 from sqlalchemy.future import select
 
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql+asyncpg://postgres:123456@localhost:5432/lc_opd_daily')
+DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql+asyncpg://dbmasteruser:123456@localhost:5432/dblc_opd_daily')
 
 engine = create_async_engine(DATABASE_URL, echo=True)
 async_session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
