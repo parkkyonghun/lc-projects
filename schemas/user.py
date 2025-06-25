@@ -1,6 +1,8 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional, Dict, List
+from pydantic import BaseModel
+from typing import Optional, List
+
 from datetime import datetime
+
 
 class BranchSchema(BaseModel):
     id: str
@@ -11,28 +13,38 @@ class BranchSchema(BaseModel):
     updatedAt: datetime
     parentId: str | None = None
 
+
 class LoginRequest(BaseModel):
     username: str
     password: str
 
-class UserSchema(BaseModel):
-    id: str  # Accept any string (not UUID)
-    email: EmailStr
-    name: str
-    password: str
-    role: str
-    branchId: Optional[str] = None  # Accept any string (not UUID)
-    username: Optional[str] = None
-    image: Optional[str] = None
-    preferences: Optional[Dict] = None
-    isActive: Optional[bool] = True
-    lastLogin: Optional[datetime] = None
-    createdAt: Optional[datetime] = None
-    updatedAt: Optional[datetime] = None
-    failedLoginAttempts: Optional[int] = 0
-    lockedUntil: Optional[datetime] = None
-    branch: Optional[BranchSchema] = None
-    loans: List['LoanSchema'] = []
 
-    class Config:
-        from_attributes = True
+class UserSchema(BaseModel):
+    id: str
+    khmer_name: str
+    english_name: str
+    id_card_number: str
+    phone_number: str
+    address: Optional[str] = None
+    occupation: Optional[str] = None
+    monthly_income: Optional[float] = None
+    id_card_photo_url: Optional[str] = None
+    profile_photo_url: Optional[str] = None
+    createdAt: datetime
+    updatedAt: datetime
+    loans: List["LoanSchema"] = []
+
+    model_config = {"from_attributes": True}
+
+
+class UserCreate(BaseModel):
+    khmer_name: str
+    english_name: str
+    id_card_number: str
+    phone_number: str
+    password: str
+    address: Optional[str] = None
+    occupation: Optional[str] = None
+    monthly_income: Optional[float] = None
+    id_card_photo_url: Optional[str] = None
+    profile_photo_url: Optional[str] = None

@@ -3,6 +3,7 @@ from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 
+
 class Branch(Base):
     __tablename__ = "Branch"
     id = Column(String, primary_key=True)

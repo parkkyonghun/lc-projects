@@ -1,29 +1,37 @@
 from pydantic import BaseModel
-from typing import Optional, List, Dict
-from .user import UserSchema
+from typing import Optional, Dict
+
 from datetime import datetime
+
 
 class LoanSchema(BaseModel):
     id: str
-    userId: str
+    customerId: str
     branchId: str
-    amount: float
+    loanAmount: float
     interestRate: float
-    term: int
+    termMonths: int
+    monthlyPayment: Optional[float] = None
+    purpose: Optional[str] = None
     status: str
     applicationDate: datetime
-    approvalDate: Optional[datetime] = None
+    startDate: Optional[datetime] = None
+    nextPaymentDate: Optional[datetime] = None
+    remainingBalance: Optional[float] = None
+    collateralDescription: Optional[str] = None
     repaymentSchedule: Optional[Dict] = None
     createdAt: datetime
     updatedAt: datetime
-    user: Optional[UserSchema] = None
+    user: Optional["UserSchema"] = None
 
-    class Config:
-        from_attributes = True
+    
+model_config = {"from_attributes": True}
+
 
 class LoanCreate(BaseModel):
-    userId: str
+    customerId: str
     branchId: str
-    amount: float
+    loanAmount: float
     interestRate: float
-    term: int
+    termMonths: int
+    purpose: str
