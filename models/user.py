@@ -1,5 +1,5 @@
 from sqlalchemy import String, Boolean, JSON, Column, DateTime, Integer
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, relationship
 import sqlalchemy as sa
 
 Base = declarative_base()
@@ -21,3 +21,5 @@ class User(Base):
     updatedAt = Column(DateTime, server_default=sa.func.now(), onupdate=sa.func.now())
     failedLoginAttempts = Column(Integer, default=0)
     lockedUntil = Column(DateTime, nullable=True)
+
+    loans = relationship("Loan", back_populates="user")

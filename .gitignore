@@ -1,13 +1,13 @@
-# Byte-compiled / optimized / DLL files
+# Virtual Environment
+venv/
+.venv/
+env/
+.env
+
+# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Virtual environments
-venv/
-env/
-.venv/
-.env/
 
 # Distribution / packaging
 build/
@@ -24,6 +24,7 @@ dist/
 .nox/
 .cache/
 .pytest_cache/
+htmlcov/
 
 # IDEs and editors
 .vscode/
@@ -41,7 +42,12 @@ dist/
 Pipfile.lock
 
 # dotenv
-.env
+.env.*
+
+# Logs and databases
+*.log
+*.db
+*.sqlite3
 
 # Other
 .DS_Store

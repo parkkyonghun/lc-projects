@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from datetime import datetime
 
 class BranchSchema(BaseModel):
@@ -32,6 +32,7 @@ class UserSchema(BaseModel):
     failedLoginAttempts: Optional[int] = 0
     lockedUntil: Optional[datetime] = None
     branch: Optional[BranchSchema] = None
+    loans: List['LoanSchema'] = []
 
     class Config:
         from_attributes = True

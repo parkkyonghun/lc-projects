@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 from models.user import User
 from schemas.user import UserSchema
 from typing import List, Optional
@@ -14,7 +15,7 @@ ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 async def get_users_controller(db: AsyncSession) -> List[UserSchema]:
-    result = await db.execute(select(User))
+    result = await db.execute(select(User).options(selectinload(User.loans)))
     users = result.scalars().all()
     return [UserSchema.model_validate(u) for u in users]
 
@@ -32,7 +33,7 @@ async def login_user_controller(username: str, password: str, db: AsyncSession):
     return token, None
 
 async def get_user_controller(user_id: str, db: AsyncSession) -> Optional[UserSchema]:
-    result = await db.execute(select(User).where(User.id == user_id))
+    result = await db.execute(select(User).where(User.id == user_id).options(selectinload(User.loans)))
     user = result.scalar_one_or_none()
     if user:
         return UserSchema.model_validate(user)
