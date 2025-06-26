@@ -9,7 +9,7 @@ from sqlalchemy.future import select
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql+asyncpg://dbmasteruser:123456@localhost:5432/dblc_opd_daily",
+    "postgresql+asyncpg://postgres:FkiecpnHecHqVUHRDxEhqssqtReDzPau@shinkansen.proxy.rlwy.net:49713/dblc_opd_daily",
 )
 
 engine = create_async_engine(DATABASE_URL, echo=True)
