@@ -1,38 +1,41 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from fastapi import Depends, HTTPException, status, Request
-from typing import AsyncGenerator
-import os
-from jose import jwt, JWTError
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from models.user import User
 from sqlalchemy.future import select
+from core.database import get_db
+from core.security import verify_token
+from core.config import settings
 
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql+asyncpg://dbmasteruser:123456@localhost:5432/dblc_opd_daily')
-
-engine = create_async_engine(DATABASE_URL, echo=True)
-async_session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
-
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session() as session:
-        yield session
-
-# JWT settings
-SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'supersecretkey')
-ALGORITHM = 'HS256'
 security = HTTPBearer()
 
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)):
+    """Get current authenticated user from JWT token"""
     credentials: HTTPAuthorizationCredentials = await security(request)
     token = credentials.credentials
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid JWT token")
-    except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid JWT token")
+    
+    # Verify token using centralized security utility
+    payload = verify_token(token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Invalid or expired token"
+        )
+    
+    user_id: str = payload.get("sub")
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Invalid token payload"
+        )
+    
+    # Get user from database
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="User not found"
+        )
+    
     return user

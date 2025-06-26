@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional, Dict
 from datetime import datetime
+
 
 class BranchSchema(BaseModel):
     id: str
@@ -11,27 +12,49 @@ class BranchSchema(BaseModel):
     updatedAt: datetime
     parentId: str | None = None
 
+
 class LoginRequest(BaseModel):
     username: str
     password: str
 
-class UserSchema(BaseModel):
-    id: str  # Accept any string (not UUID)
-    email: EmailStr
-    name: str
-    password: str
-    role: str
-    branchId: Optional[str] = None  # Accept any string (not UUID)
-    username: Optional[str] = None
-    image: Optional[str] = None
-    preferences: Optional[Dict] = None
-    isActive: Optional[bool] = True
-    lastLogin: Optional[datetime] = None
-    createdAt: Optional[datetime] = None
-    updatedAt: Optional[datetime] = None
-    failedLoginAttempts: Optional[int] = 0
-    lockedUntil: Optional[datetime] = None
-    branch: Optional[BranchSchema] = None
 
-    class Config:
-        from_attributes = True
+class UserSchema(BaseModel):
+    id: str
+    username: str
+    email: str
+    phone: str
+    firstName: str
+    lastName: str
+    role: str
+    isActive: bool
+    isVerified: bool
+    branchId: Optional[str] = None
+    createdAt: datetime
+    updatedAt: datetime
+    lastLogin: Optional[datetime] = None
+    profileData: Optional[Dict] = None
+    
+    model_config = {"from_attributes": True}
+
+
+class UserCreate(BaseModel):
+    username: str
+    email: str
+    phone: str
+    password: str
+    firstName: str
+    lastName: str
+    role: str = "customer"
+    branchId: Optional[str] = None
+    profileData: Optional[Dict] = None
+
+
+class UserUpdate(BaseModel):
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    isActive: Optional[bool] = None
+    isVerified: Optional[bool] = None
+    branchId: Optional[str] = None
+    profileData: Optional[Dict] = None
