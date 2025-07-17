@@ -1,16 +1,9 @@
-<<<<<<< HEAD
-from sqlalchemy import String, Column, DateTime, Float, Boolean, Integer
-from sqlalchemy.orm import declarative_base, relationship
-import sqlalchemy as sa
-from enum import Enum
-=======
 import uuid
 from datetime import datetime
 from enum import Enum
-from sqlalchemy import String, Column, Float, Boolean, ForeignKey, Enum as SQLEnum, DateTime, func
+from sqlalchemy import String, Column, Float, Boolean, ForeignKey, Enum as SQLEnum, DateTime, func, Integer
 from sqlalchemy.orm import relationship, deferred
 from .base import Base
->>>>>>> 206bdf9ddbe6e66e57ff16327692889b7c787595
 
 
 class UserType(str, Enum):
@@ -75,10 +68,6 @@ class Customer(Base):
     monthly_income = Column(Float, nullable=True)
     id_card_photo_url = Column(String, nullable=True)
     profile_photo_url = Column(String, nullable=True)
-<<<<<<< HEAD
-    hashed_password = Column(String, nullable=False)
-    createdAt = Column(DateTime, server_default=sa.func.now())
-    updatedAt = Column(DateTime, server_default=sa.func.now(), onupdate=sa.func.now())
     
     # Sync-related fields
     server_id = Column(String, nullable=True, unique=True)  # ID from server
@@ -88,7 +77,6 @@ class Customer(Base):
     is_deleted = Column(Boolean, nullable=False, default=False)  # Soft delete
     sync_retry_count = Column(Integer, nullable=False, default=0)
     sync_error_message = Column(String, nullable=True)
-=======
     
     # Relationships
     user = relationship("User", back_populates="customer")
@@ -97,8 +85,6 @@ class Customer(Base):
     __mapper_args__ = {
         'polymorphic_identity': UserType.CUSTOMER
     }
-
->>>>>>> 206bdf9ddbe6e66e57ff16327692889b7c787595
 
 class LoanOfficer(Base):
     __tablename__ = "loan_officers"
