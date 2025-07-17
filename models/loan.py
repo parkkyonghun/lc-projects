@@ -1,9 +1,7 @@
-<<<<<<< HEAD
 from sqlalchemy import Column, String, Float, Integer, DateTime, ForeignKey, JSON, Boolean
 from sqlalchemy.orm import declarative_base, relationship
 import sqlalchemy as sa
 from enum import Enum
-=======
 import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -13,7 +11,6 @@ from sqlalchemy import Column, String, Float, Integer, DateTime, ForeignKey, JSO
 from sqlalchemy.orm import relationship, validates
 from .base import Base
 from .user import UserType
->>>>>>> 206bdf9ddbe6e66e57ff16327692889b7c787595
 
 
 class LoanStatus(str, Enum):
@@ -56,28 +53,6 @@ class Loan(Base):
     term_months = Column(Integer, nullable=False)
     monthly_payment = Column(Float, nullable=True)
     purpose = Column(String, nullable=True)
-<<<<<<< HEAD
-    status = Column(
-        String, nullable=False, default="pending"
-    )  # pending, approved, active, completed, rejected
-    applicationDate = Column(DateTime, server_default=sa.func.now())
-    startDate = Column(DateTime, nullable=True)
-    nextPaymentDate = Column(DateTime, nullable=True)
-    remainingBalance = Column(Float, nullable=True)
-    collateralDescription = Column(String, nullable=True)
-    repaymentSchedule = Column(JSON, nullable=True)
-    createdAt = Column(DateTime, server_default=sa.func.now())
-    updatedAt = Column(DateTime, server_default=sa.func.now(), onupdate=sa.func.now())
-    
-    # Sync-related fields
-    server_id = Column(String, nullable=True, unique=True)  # ID from server
-    sync_status = Column(String, nullable=False, default=SyncStatus.PENDING)
-    last_synced_at = Column(DateTime, nullable=True)
-    version = Column(Integer, nullable=False, default=1)  # For conflict resolution
-    is_deleted = Column(Boolean, nullable=False, default=False)  # Soft delete
-    sync_retry_count = Column(Integer, nullable=False, default=0)
-    sync_error_message = Column(String, nullable=True)
-=======
     
     # Status and dates
     status = Column(SQLEnum(LoanStatus), default=LoanStatus.PENDING, nullable=False)
@@ -227,7 +202,6 @@ class Loan(Base):
             
         monthly_payment = self.calculate_monthly_payment()
         return (monthly_payment * self.term_months) - self.loan_amount
->>>>>>> 206bdf9ddbe6e66e57ff16327692889b7c787595
 
 
 @event.listens_for(Loan, 'before_insert')

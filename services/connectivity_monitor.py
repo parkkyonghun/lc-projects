@@ -158,17 +158,26 @@ class ConnectivityMonitor:
         return None
     
     async def start_monitoring(self):
-        """Start continuous connectivity monitoring"""
+        """Start continuous connectivity monitoring as a background task"""
         if self.monitoring:
             return
         
         self.monitoring = True
         
-        while self.monitoring:
-            await self.check_connectivity()
-            await asyncio.sleep(self.check_interval)
+        # Create a background task instead of blocking
+        asyncio.create_task(self._monitoring_loop())
     
-    def stop_monitoring(self):
+    async def _monitoring_loop(self):
+        """Background monitoring loop"""
+        while self.monitoring:
+            try:
+                await self.check_connectivity()
+                await asyncio.sleep(self.check_interval)
+            except Exception as e:
+                print(f"Error in connectivity monitoring loop: {e}")
+                await asyncio.sleep(self.check_interval)
+    
+    async def stop_monitoring(self):
         """Stop connectivity monitoring"""
         self.monitoring = False
     

@@ -51,7 +51,7 @@ async def login(
         refresh_token=tokens["refresh_token"],
         token_type=tokens["token_type"],
         user_id=user.id,
-        username=user.english_name
+        username=user.username
     )
 
 
@@ -83,14 +83,35 @@ async def logout(current_user: User = Depends(get_current_user)):
 @router.get("/me")
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     """Get current user information"""
-    return {
+    base_info = {
         "id": current_user.id,
-        "khmer_name": current_user.khmer_name,
-        "english_name": current_user.english_name,
+        "username": current_user.username,
+        "email": current_user.email,
         "phone_number": current_user.phone_number,
-        "address": current_user.address,
-        "occupation": current_user.occupation,
-        "monthly_income": current_user.monthly_income,
-        "sync_status": current_user.sync_status,
-        "last_synced_at": current_user.last_synced_at.isoformat() if current_user.last_synced_at else None
+        "user_type": current_user.user_type,
+        "is_active": current_user.is_active,
+        "is_verified": current_user.is_verified,
+        "last_login": current_user.last_login.isoformat() if current_user.last_login else None,
+        "created_at": current_user.created_at.isoformat() if current_user.created_at else None
     }
+    
+    # Add type-specific information
+    if current_user.user_type == "customer" and current_user.customer:
+        base_info.update({
+            "khmer_name": current_user.customer.khmer_name,
+            "english_name": current_user.customer.english_name,
+            "id_card_number": current_user.customer.id_card_number,
+            "address": current_user.customer.address,
+            "occupation": current_user.customer.occupation,
+            "monthly_income": current_user.customer.monthly_income,
+            "sync_status": current_user.customer.sync_status,
+            "last_synced_at": current_user.customer.last_synced_at.isoformat() if current_user.customer.last_synced_at else None
+        })
+    elif current_user.user_type == "loan_officer" and current_user.loan_officer:
+        base_info.update({
+            "employee_id": current_user.loan_officer.employee_id,
+            "hire_date": current_user.loan_officer.hire_date.isoformat() if current_user.loan_officer.hire_date else None,
+            "department": current_user.loan_officer.department
+        })
+    
+    return base_info

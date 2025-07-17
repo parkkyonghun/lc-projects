@@ -9,6 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_engine_from_config, create
 
 from alembic import context
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 # Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -51,7 +55,8 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    # Get URL from environment variable or config
+    url = os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -78,8 +83,8 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    # This is the same URL as in your dependencies.py
-    url = config.get_main_option("sqlalchemy.url")
+    # Get URL from environment variable or config
+    url = os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
     
     # Create async engine
     async_engine = create_async_engine(url, poolclass=pool.NullPool)

@@ -52,7 +52,7 @@ class AuthManager:
     async def authenticate_user(self, db: AsyncSession, username: str, password: str) -> Optional[User]:
         """Authenticate a user with username and password"""
         result = await db.execute(
-            select(User).where(User.english_name == username)
+            select(User).where(User.username == username)
         )
         user = result.scalar_one_or_none()
         
@@ -65,8 +65,8 @@ class AuthManager:
         await self.init_redis()
         
         # Create tokens
-        access_token = self.create_access_token({"sub": user.id, "username": user.english_name})
-        refresh_token = self.create_refresh_token({"sub": user.id, "username": user.english_name})
+        access_token = self.create_access_token({"sub": user.id, "username": user.username})
+        refresh_token = self.create_refresh_token({"sub": user.id, "username": user.username})
         
         # Store refresh token in Redis with expiration
         refresh_token_key = f"refresh_token:{user.id}"
@@ -175,8 +175,13 @@ class AuthManager:
                 detail="Token has been revoked"
             )
         
-        # Get user from database
-        result = await db.execute(select(User).where(User.id == user_id))
+        # Get user from database with related data
+        from sqlalchemy.orm import selectinload
+        result = await db.execute(
+            select(User)
+            .options(selectinload(User.customer), selectinload(User.loan_officer))
+            .where(User.id == user_id)
+        )
         user = result.scalar_one_or_none()
         
         if not user:
