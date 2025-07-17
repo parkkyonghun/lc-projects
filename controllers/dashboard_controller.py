@@ -4,6 +4,7 @@ from sqlalchemy.orm import selectinload
 from models.loan import Loan
 from models.user import User
 from schemas.dashboard import DashboardSchema
+from schemas.loan import LoanSchema
 
 
 async def get_dashboard_stats_controller(db: AsyncSession) -> DashboardSchema:
@@ -34,11 +35,14 @@ async def get_dashboard_stats_controller(db: AsyncSession) -> DashboardSchema:
     )
     payment_alerts = payment_alerts_result.scalars().all()
 
+    recent_loans_schemas = [LoanSchema.model_validate(loan) for loan in recent_loans]
+    payment_alerts_schemas = [LoanSchema.model_validate(alert) for alert in payment_alerts]
+
     return DashboardSchema(
         totalLoans=total_loans,
         activeLoans=active_loans,
         totalCustomers=total_customers,
         totalAmount=total_amount,
-        recentLoans=recent_loans,
-        paymentAlerts=payment_alerts,
+        recentLoans=recent_loans_schemas,
+        paymentAlerts=payment_alerts_schemas,
     )

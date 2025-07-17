@@ -1,50 +1,43 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from fastapi import Depends, HTTPException, status, Request
-from typing import AsyncGenerator
-import os
-from jose import jwt, JWTError
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import AsyncGenerator
 from models.user import User
-from sqlalchemy.future import select
+from services.auth_manager import auth_manager
+from services.application_repository import get_application_repository, ApplicationRepository
+from config.settings import settings
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://dbmasteruser:123456@localhost:5432/dblc_opd_daily",
-)
-
-engine = create_async_engine(DATABASE_URL, echo=True)
+# Database setup
+engine = create_async_engine(settings.database_url, echo=True)
 async_session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+
+# Security
+security = HTTPBearer()
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Get database session"""
     async with async_session() as session:
         yield session
 
 
-# JWT settings
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "supersecretkey")
-ALGORITHM = "HS256"
-security = HTTPBearer()
-
-
-async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)):
-    credentials: HTTPAuthorizationCredentials = await security(request)
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    """Get current authenticated user"""
     token = credentials.credentials
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid JWT token"
-            )
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid JWT token"
-        )
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
-        )
-    return user
+    return await auth_manager.get_current_user(db, token)
+
+
+async def get_repository(db: AsyncSession = Depends(get_db)) -> ApplicationRepository:
+    """Get application repository instance"""
+    return get_application_repository(db)
+
+
+# Optional: Admin user dependency
+async def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
+    """Get current user and verify admin privileges"""
+    # Add admin check logic here if needed
+    # For now, return the current user
+    return current_user

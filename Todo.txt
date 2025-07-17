@@ -1,0 +1,82 @@
+# Khmer Loan Management App - Todo List
+
+
+## Phase 1: Project setup and database design
+
+- [x] Create project directory structure
+
+- [x] Set up FastAPI project with dependencies
+
+- [x] Design PostgreSQL database schema
+
+- [x] Create database models for users, loans, payments
+
+- [x] Set up database connection and configuration
+
+- [x] Create initial migration files
+
+
+## Phase 2: FastAPI backend development with core models
+
+- [x] Implement Pydantic models for API requests/responses
+
+- [x] Set up database connection and ORM
+
+- [x] Create base CRUD operations
+
+- [x] Implement error handling and validation
+
+
+## Phase 3: Authentication and user management APIs
+
+- [x] Implement JWT authentication
+
+- [x] Create user registration and login endpoints
+
+- [x] Add user profile management
+
+- [x] Implement role-based access control
+
+
+## Phase 4: Loan management APIs and business logic
+
+- [ ] Create loan application endpoints
+
+- [ ] Implement loan approval workflow
+
+- [ ] Add loan status management
+
+- [ ] Create loan calculation logic
+
+
+## Phase 5: Payment tracking and ID scanning APIs
+
+- [ ] Implement payment recording endpoints
+
+- [ ] Add payment history tracking
+
+- [ ] Create ID card scanning functionality
+
+- [ ] Implement OCR for ID data extraction
+
+
+## Phase 6: Testing and documentation
+
+- [ ] Write unit tests for all endpoints
+
+- [ ] Create API documentation
+
+- [ ] Test all functionality
+
+- [ ] Performance optimization
+
+
+## Phase 7: Deployment and delivery
+
+- [ ] Deploy to production
+
+- [ ] Provide deployment instructions
+
+- [ ] Deliver final application
+
+
